@@ -86,6 +86,21 @@
   &:hover { background: var(--inm-color-surface-accent-moderate); }
 }
 
+/* Subtle variant for the "Beendete / abgebrochene Einträge anzeigen" footer
+   row — same layout, lighter weight, no uppercase, muted text. */
+.group-divider-muted {
+  background:     transparent;
+  border-bottom:  none;
+  font-weight:    var(--inm-font-weight-regular);
+  color:          var(--inm-color-foreground-muted);
+  text-transform: none;
+  letter-spacing: 0;
+
+  .group-caret { color: var(--inm-color-foreground-muted); }
+
+  &:hover { background: var(--inm-color-surface-subtle); }
+}
+
 .group-caret {
   font-size:    var(--inm-font-size-label);
   color:        var(--inm-color-foreground-brand);

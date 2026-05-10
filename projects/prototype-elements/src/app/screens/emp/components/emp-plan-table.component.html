@@ -164,4 +164,15 @@
     }
   }
 
+  <!-- Beendete / abgebrochene Einträge — collapsed by default, hidden during search -->
+  @if (!q()) {
+    <div class="group-divider group-divider-muted" (click)="onGroup('beendet')">
+      <i class="ph-bold ph-caret-down group-caret" [class.collapsed]="isCollapsed('beendet')"></i>
+      <span>Beendete / abgebrochene Einträge anzeigen</span>
+    </div>
+    @if (!isCollapsed('beendet')) {
+      <div class="empty-state">Keine beendeten oder abgebrochenen Einträge</div>
+    }
+  }
+
 </div>

@@ -10,7 +10,7 @@ import {
 import { BadgeComponent, HighlightPipe } from '@indamed/ui';
 import { MedEntry } from '../../../data/emp-data';
 
-export type MedGroup = 'aktiv' | 'pausiert' | 'geplant';
+export type MedGroup = 'aktiv' | 'pausiert' | 'geplant' | 'beendet';
 
 /** Returns true if any of the med's searchable fields includes the query. */
 function medMatches(med: MedEntry, query: string): boolean {

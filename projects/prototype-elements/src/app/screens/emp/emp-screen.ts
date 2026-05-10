@@ -167,7 +167,7 @@ export class EmpScreenComponent {
 
   // ── View state ────────────────────────────────────────────────
   expandedRows    = signal<Set<string>>(new Set());
-  collapsedGroups = signal<Set<MedGroup>>(new Set());
+  collapsedGroups = signal<Set<MedGroup>>(new Set(['beendet']));
   planSearch      = signal<string>('');
   hideUsedSrc     = signal<boolean>(false);
 

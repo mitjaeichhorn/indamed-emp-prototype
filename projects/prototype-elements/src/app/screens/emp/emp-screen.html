@@ -7,6 +7,7 @@
 
   <div meta-trailing class="patient-trailing">
     <inm-button variant="text" size="m" iconLeft="printer">Drucken</inm-button>
+    <inm-button variant="text" size="m" iconLeft="file-pdf">PDF runterladen</inm-button>
     <span class="alt-legend" role="button" tabindex="0"
       (click)="altHints.toggleSticky()"
       (keydown.enter)="altHints.toggleSticky()">
@@ -68,6 +69,10 @@
         (planClick)="openPastPlan($event)" />
     </as-split-area>
   </as-split>
+
+  <inm-button footer-actions variant="primary" size="l" iconLeft="check">
+    Medikationsplan aktualisieren
+  </inm-button>
 
 </inm-pattern-dialog-shell>
 
