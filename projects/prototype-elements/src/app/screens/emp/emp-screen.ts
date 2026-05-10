@@ -301,6 +301,13 @@ export class EmpScreenComponent {
    *  to mark rows as "Bereits im Plan". */
   aktiveWirkstoffe = computed(() => this.aktive.map(m => m.wirkstoff));
 
+  /** Total count of rows marked `geaendert` across all groups — drives the
+   *  badge next to "Medikationsplan aktualisieren". */
+  changedCount = computed(() =>
+    [...this.aktive, ...this.pausiert, ...this.geplant]
+      .filter(m => m.geaendert).length,
+  );
+
   // (filteredAktive moved into emp-plan-table — search filtering now lives
   //  in each sub-component along with highlighting.)
 

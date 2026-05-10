@@ -72,6 +72,9 @@ export interface MedEntry {
   grund:       string;
   rw:          number;
   art:         string;
+  /** Marks this row as recently changed — renders the "*" indicator in the
+   *  leftmost plan-table column and counts toward the Aktualisieren badge. */
+  geaendert?:  boolean;
   details: {
     versicherte:   string;
     mitbehandler:  string;
@@ -141,7 +144,7 @@ export const AKTIVE_MEDIKATION: MedEntry[] = [
   {
     id: 'med-3', wirkstoff: 'Metoprolol', handelsname: 'Metoprolol-ratiopharm',
     staerke: '47,5 mg', form: 'Retardtabl', dosierung: '0-0-1-0', hinweise: '', grund: 'Arterielle Hypertonie',
-    rw: 14, art: 'A',
+    rw: 14, art: 'A', geaendert: true,
     details: {
       versicherte: '', mitbehandler: 'Kardiologe informiert', beginn: '10.09.2023', icd: 'I10',
       historie: [],
@@ -150,7 +153,7 @@ export const AKTIVE_MEDIKATION: MedEntry[] = [
   {
     id: 'med-4', wirkstoff: 'Simvastatin', handelsname: 'Simva Aristo',
     staerke: '20 mg', form: 'Tabls', dosierung: '0-0-1-0', hinweise: 'Abends einnehmen', grund: 'Hypercholesterinämie',
-    rw: 0, art: 'A',
+    rw: 0, art: 'A', geaendert: true,
     details: {
       versicherte: 'Abends einnehmen', mitbehandler: '', beginn: '03.04.2021', icd: 'E78.0',
       historie: [

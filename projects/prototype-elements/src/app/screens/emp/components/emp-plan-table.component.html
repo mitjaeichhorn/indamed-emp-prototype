@@ -1,6 +1,19 @@
+<div class="plan-heading">
+  <span class="plan-legend">
+    <span class="legend-asterisk">*</span> Veränderte Einträge
+  </span>
+  <label class="plan-toggle">
+    <input type="checkbox" [checked]="showChangedOnly()"
+      (change)="onToggleChangedOnly($any($event.target).checked)" />
+    <span class="switch-slider"></span>
+    <span>Nur Veränderte anzeigen</span>
+  </label>
+</div>
+
 <div class="plan-table">
 
   <div class="table-header">
+    <div class="col-changed" title="Veränderte Einträge">*</div>
     <div class="col-expand"></div>
     <div class="col-wirkstoff">Wirkstoff</div>
     <div class="col-handelsname">Handelsname</div>
@@ -29,6 +42,7 @@
       @for (med of filteredAktive(); track med.id) {
         <div class="med-row" [class.expanded]="isExpanded(med.id)">
           <div class="row-main" (click)="onRowClick(med, $event)">
+            <div class="col-changed">{{ med.geaendert ? '*' : '' }}</div>
             <div class="col-expand">
               <button class="expand-btn" [class.open]="isExpanded(med.id)"
                 (click)="onExpand(med.id, $event)">
@@ -120,6 +134,7 @@
       @for (med of filteredPausiert(); track med.id) {
         <div class="med-row row-paused">
           <div class="row-main">
+            <div class="col-changed">{{ med.geaendert ? '*' : '' }}</div>
             <div class="col-expand"></div>
             <div class="col-wirkstoff"    [innerHTML]="med.wirkstoff   | inmHighlight: q()"></div>
             <div class="col-handelsname"  [innerHTML]="med.handelsname | inmHighlight: q()"></div>

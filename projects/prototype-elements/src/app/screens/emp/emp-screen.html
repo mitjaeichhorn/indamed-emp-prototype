@@ -72,6 +72,9 @@
 
   <inm-button footer-actions variant="primary" size="l" iconLeft="check">
     Medikationsplan aktualisieren
+    @if (changedCount() > 0) {
+      <span class="aktualisieren-count">{{ changedCount() }}</span>
+    }
   </inm-button>
 
 </inm-pattern-dialog-shell>

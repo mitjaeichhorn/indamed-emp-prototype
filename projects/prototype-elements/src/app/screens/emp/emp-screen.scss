@@ -363,3 +363,27 @@ as-split.content-area {
   margin-block: var(--inm-space-1);
   background:   var(--inm-color-border-subtle);
 }
+
+/* ── "Medikationsplan aktualisieren" — count pill ───────────────────────────
+   Inline counter projected into the dialog-shell footer's primary button.
+   Renders only when `changedCount() > 0` (see `emp-screen.html`).
+   White pill / primary-blue text, sized to read well on the button.
+
+   Future: when `inm-badge` gains a contrast variant suitable for primary
+   button backgrounds (e.g. `'on-primary'`), replace this with `<inm-badge>`.
+*/
+.aktualisieren-count {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  min-width:       var(--inm-badge-size);
+  height:          var(--inm-badge-size);
+  padding:         0 var(--inm-space-1);
+  margin-left:     var(--inm-space-2);
+  border-radius:   var(--inm-radius-pill);
+  background:      var(--inm-color-surface-default);
+  color:           var(--inm-color-action-primary);
+  font-size:       var(--inm-badge-font-size);
+  font-weight:     var(--inm-font-weight-bold);
+  line-height:     1;
+}

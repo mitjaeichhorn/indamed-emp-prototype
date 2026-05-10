@@ -58,11 +58,27 @@ export class EmpPlanTableComponent {
   private _geplant  = signal<MedEntry[]>([]);
   private _search   = signal<string>('');
 
+  /** "Nur Veränderte anzeigen" toggle in the plan heading. When on, all
+   *  three groups are filtered to only rows with `geaendert: true`. */
+  showChangedOnly = signal(false);
+
   q = computed(() => this._search().trim());
 
-  filteredAktive   = computed(() => this._aktive().filter(m => medMatches(m, this.q())));
-  filteredPausiert = computed(() => this._pausiert().filter(m => medMatches(m, this.q())));
-  filteredGeplant  = computed(() => this._geplant().filter(m => medMatches(m, this.q())));
+  private applyFilters(list: MedEntry[]): MedEntry[] {
+    const q = this.q();
+    const onlyChanged = this.showChangedOnly();
+    return list.filter(m =>
+      medMatches(m, q) && (!onlyChanged || !!m.geaendert),
+    );
+  }
+
+  filteredAktive   = computed(() => this.applyFilters(this._aktive()));
+  filteredPausiert = computed(() => this.applyFilters(this._pausiert()));
+  filteredGeplant  = computed(() => this.applyFilters(this._geplant()));
+
+  onToggleChangedOnly(checked: boolean): void {
+    this.showChangedOnly.set(checked);
+  }
 
   @Output() rowClick    = new EventEmitter<{ med: MedEntry; event: Event }>();
   @Output() rowExpand   = new EventEmitter<string>();
