@@ -369,12 +369,17 @@ as-split.content-area {
    Renders only when `changedCount() > 0` (see `emp-screen.html`).
    White pill / primary-blue text, sized to read well on the button.
 
+   `align-self: center` overrides the button slot's mixed text-node + element
+   baseline so the pill sits at the geometric centre of the button regardless
+   of the surrounding text's x-height/baseline.
+
    Future: when `inm-badge` gains a contrast variant suitable for primary
    button backgrounds (e.g. `'on-primary'`), replace this with `<inm-badge>`.
 */
 .aktualisieren-count {
   display:         inline-flex;
   align-items:     center;
+  align-self:      center;
   justify-content: center;
   min-width:       var(--inm-badge-size);
   height:          var(--inm-badge-size);

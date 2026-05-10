@@ -371,18 +371,27 @@
   font-style:  italic;
 }
 
-/* ── Plan heading: legend + "Nur Veränderte anzeigen" toggle ─────── */
+/* ── Plan heading: legend + "Nur Veränderte anzeigen" toggle ─────────
+   Mirrors the structure of `.sources-heading` in emp-sources-panel:
+   single right-side group (`.plan-legend-wrap`) holding the legend chip
+   and the switch, so both items read as one cluster aligned to the right. */
 
 .plan-heading {
   display:         flex;
   align-items:     center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding:         0 var(--inm-space-3);
   height:          32px;
   background:      var(--inm-color-surface-chrome);
   border-bottom:   1px solid var(--inm-color-border-default);
   flex-shrink:     0;
   gap:             var(--inm-space-3);
+}
+
+.plan-legend-wrap {
+  display:     inline-flex;
+  align-items: center;
+  gap:         var(--inm-space-3);
 }
 
 .plan-legend {

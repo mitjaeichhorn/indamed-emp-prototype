@@ -1,13 +1,15 @@
 <div class="plan-heading">
-  <span class="plan-legend">
-    <span class="legend-asterisk">*</span> Veränderte Einträge
+  <span class="plan-legend-wrap">
+    <span class="plan-legend">
+      <span class="legend-asterisk">*</span> Veränderte Einträge
+    </span>
+    <label class="plan-toggle">
+      <input type="checkbox" [checked]="showChangedOnly()"
+        (change)="onToggleChangedOnly($any($event.target).checked)" />
+      <span class="switch-slider"></span>
+      <span>Nur Veränderte anzeigen</span>
+    </label>
   </span>
-  <label class="plan-toggle">
-    <input type="checkbox" [checked]="showChangedOnly()"
-      (change)="onToggleChangedOnly($any($event.target).checked)" />
-    <span class="switch-slider"></span>
-    <span>Nur Veränderte anzeigen</span>
-  </label>
 </div>
 
 <div class="plan-table">
