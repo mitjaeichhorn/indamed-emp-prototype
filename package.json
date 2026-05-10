@@ -1,0 +1,35 @@
+{
+  "name": "indamed-emp-prototype",
+  "version": "0.1.0",
+  "description": "INDAMED eMP (elektronischer Medikationsplan) prototype — Angular app consuming @indamed/ui design system.",
+  "private": true,
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve prototype-elements --port 4202",
+    "build": "ng build prototype-elements",
+    "watch": "ng build prototype-elements --watch --configuration development"
+  },
+  "packageManager": "npm@11.11.0",
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "@fontsource/inter": "^5.2.8",
+    "@indamed/ui": "^0.2.0",
+    "@phosphor-icons/web": "^2.1.2",
+    "angular-split": "^20.0.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^21.2.0",
+    "@angular/build": "^21.2.9",
+    "@angular/cli": "^21.2.9",
+    "@angular/compiler-cli": "^21.2.0",
+    "@angular/platform-browser-dynamic": "^21.2.0",
+    "typescript": "~5.9.2"
+  }
+}

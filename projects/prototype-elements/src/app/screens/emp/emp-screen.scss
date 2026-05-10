@@ -1,0 +1,365 @@
+/*
+ * EMP Screen — prototype-specific styles
+ *
+ * All colors use @indamed/ui tokens.
+ *
+ * Remaining TODOs (components not yet in @indamed/ui):
+ *   - inm-input[search] variant (header search + sources legend toggle)
+ *   - Row keyboard focus style (--inm-color-surface-row-selected used for now)
+ */
+
+:host { display: block; }
+
+/* ── Content area split ─────────────────────────────────────────── */
+
+/* angular-split owns the layout. Two constraints make resizing stable:
+   1) The split must claim the full remaining flex space (and nothing more).
+   2) Each as-split-area must clip its child so the child's intrinsic size
+      can't push the area open beyond what the gutter dictates. */
+as-split.content-area {
+  flex:       1 1 0;
+  min-height: 0;
+  height:     100%;
+  overflow:   hidden;
+}
+
+::ng-deep as-split.content-area > .as-split-area {
+  overflow:   hidden;
+  min-height: 0;
+  display:    flex;
+}
+
+/* Force child components to fill their area and ignore their own
+   intrinsic min-height / flex hints (those were tuned for the old
+   plain-flex layout). */
+::ng-deep as-split.content-area > .as-split-area > emp-plan-table,
+::ng-deep as-split.content-area > .as-split-area > emp-sources-panel {
+  flex:       1 1 0;
+  min-height: 0;
+  width:      100%;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   CHROME ACTIONS (titlebar right side)
+   ══════════════════════════════════════════════════════════════════ */
+
+.title-band-actions {
+  display:     inline-flex;
+  align-items: center;
+  gap:         var(--inm-space-2);
+}
+
+
+.chrome-tab {
+  display:       inline-flex;
+  align-items:   center;
+  height:        22px;
+  padding:       0 var(--inm-space-2);
+  background:    var(--inm-color-surface-default);
+  border:        1px solid var(--inm-color-border-default);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  font-family:   var(--inm-font-family-default);
+  font-size:     var(--inm-font-size-caption);
+  font-weight:   var(--inm-font-weight-semibold);
+  color:         var(--inm-color-foreground-default);
+  margin-bottom: -1px;
+}
+
+.patient-trailing {
+  display:     flex;
+  align-items: center;
+  gap:         var(--inm-space-3);
+}
+
+/* Clickable wrapper around the "halten für Tastenkürzel" legend.
+   Toggles AltHintService.sticky on click. */
+.alt-legend {
+  display:        inline-flex;
+  align-items:    center;
+  cursor:         pointer;
+  border-radius:  var(--inm-radius-overlay);
+  padding:        2px 4px;
+  user-select:    none;
+
+  &:hover    { background: var(--inm-color-surface-accent-moderate); }
+  &:focus-visible {
+    outline:        2px solid var(--inm-color-border-focus);
+    outline-offset: 2px;
+  }
+}
+
+.online-hilfe-link {
+  display:        inline-flex;
+  align-items:    center;
+  gap:            4px;
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-label);
+  color:          var(--inm-color-foreground-subtle);
+  text-decoration: none;
+  cursor:         pointer;
+  padding:        2px 4px;
+  border-radius:  var(--inm-radius-overlay);
+
+  i { font-size: 13px; }
+  &:hover { color: var(--inm-color-foreground-default); }
+}
+
+/* Section headline shared by .quellen-title (.page-title moved to emp-title-band) */
+.quellen-title {
+  font-family:    var(--inm-font-family-default);
+  font-size:      22px;
+  font-weight:    var(--inm-font-weight-light);
+  color:          var(--inm-color-foreground-default);
+  letter-spacing: 0;
+  margin:         0;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   MEDICATION DETAIL MODAL
+   ══════════════════════════════════════════════════════════════════ */
+
+.med-detail-body {
+  padding: var(--inm-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--inm-space-3);
+}
+
+.detail-section-title {
+  font-family:  var(--inm-font-family-default);
+  font-size:    var(--inm-font-size-caption);
+  font-weight:  var(--inm-font-weight-semibold);
+  color:        var(--inm-color-foreground-subtle);
+  text-transform: uppercase;
+  letter-spacing: var(--inm-letter-spacing-label);
+  margin-bottom: var(--inm-space-1);
+}
+
+.detail-grid {
+  display:               grid;
+  grid-template-columns: max-content 1fr;
+  gap:                   var(--inm-space-1) var(--inm-space-4);
+  font-family:           var(--inm-font-family-default);
+  font-size:             var(--inm-font-size-caption);
+}
+
+.detail-label { color: var(--inm-color-foreground-subtle); white-space: nowrap; }
+.detail-value { color: var(--inm-color-foreground-default); font-weight: var(--inm-font-weight-medium); }
+
+/* ══════════════════════════════════════════════════════════════════
+   CONTEXT MENU
+   ══════════════════════════════════════════════════════════════════ */
+
+.ctx-backdrop {
+  position: fixed;
+  inset:    0;
+  z-index:  var(--inm-z-dropdown);
+}
+
+.ctx-positioned {
+  position:  fixed;
+  z-index:   calc(var(--inm-z-dropdown) + 1);
+  transform: translateY(4px);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SHARED MODAL STYLES
+   ══════════════════════════════════════════════════════════════════ */
+
+.modal-body-pad {
+  padding: var(--inm-space-4);
+}
+
+.detail-stack {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--inm-space-3);
+}
+
+
+.detail-section-title {
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-caption);
+  font-weight:    var(--inm-font-weight-semibold);
+  color:          var(--inm-color-foreground-subtle);
+  text-transform: uppercase;
+  letter-spacing: var(--inm-letter-spacing-label);
+  margin-bottom:  var(--inm-space-2);
+}
+
+.detail-grid {
+  display:               grid;
+  grid-template-columns: max-content 1fr;
+  gap:                   var(--inm-space-1) var(--inm-space-4);
+  font-family:           var(--inm-font-family-default);
+  font-size:             var(--inm-font-size-caption);
+}
+
+.detail-label { color: var(--inm-color-foreground-subtle); white-space: nowrap; }
+.detail-value { color: var(--inm-color-foreground-default); font-weight: var(--inm-font-weight-medium); }
+
+.confirm-message {
+  font-family: var(--inm-font-family-default);
+  font-size:   var(--inm-font-size-body);
+  color:       var(--inm-color-foreground-default);
+  line-height: var(--inm-line-height-body);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FORM MODAL LAYOUT
+   ══════════════════════════════════════════════════════════════════ */
+
+.modal-form {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--inm-space-3);
+}
+
+.form-section { display: flex; flex-direction: column; gap: var(--inm-space-2); }
+.form-row     { display: flex; flex-direction: column; }
+
+.form-row-2col {
+  flex-direction: row;
+  gap:            var(--inm-space-3);
+
+  > * { flex: 1; }
+}
+
+.modal-section-label {
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-label);
+  font-weight:    var(--inm-font-weight-bold);
+  color:          var(--inm-color-foreground-subtle);
+  text-transform: uppercase;
+  letter-spacing: var(--inm-letter-spacing-label);
+  margin-bottom:  -2px;
+}
+
+.modal-divider {
+  border:     none;
+  border-top: 1px solid var(--inm-color-border-subtle);
+  margin:     var(--inm-space-2) 0;
+}
+
+/* ── Readonly block (used by eML-detail / src-detail / past-plan modals) ── */
+
+.readonly-block {
+  display:        flex;
+  flex-direction: column;
+  border:         1px solid var(--inm-color-border-subtle);
+  border-radius:  var(--inm-radius-input);
+  background:     var(--inm-color-surface-subtle);
+  overflow:       hidden;
+}
+
+.ro-row {
+  display:       grid;
+  grid-template-columns: 120px 1fr;
+  align-items:   center;
+  padding:       6px var(--inm-space-3);
+  border-bottom: 1px solid var(--inm-color-border-subtle);
+  font-family:   var(--inm-font-family-default);
+  font-size:     var(--inm-font-size-caption);
+
+  &:last-child { border-bottom: none; }
+}
+
+.ro-label { color: var(--inm-color-foreground-subtle); }
+.ro-value { color: var(--inm-color-foreground-default); }
+
+/* ── eML Verordnung/Dispensierung side-by-side comparison ─────── */
+
+.eml-compare-grid {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   0;
+}
+
+/* Left = standard dialog grey (existing record); right = white (the new entry).
+   Diffs on the right are tinted blue (see .diff below). */
+.eml-compare-col {
+  padding: var(--inm-space-4);
+}
+.eml-compare-col:first-child  { background: var(--inm-color-surface-dialog); }
+.eml-compare-col:last-child   { background: var(--inm-color-surface-default); }
+
+.eml-compare-title {
+  margin:      0 0 var(--inm-space-3);
+  font-family: var(--inm-font-family-default);
+  font-size:   22px;
+  font-weight: var(--inm-font-weight-light);
+  color:       var(--inm-color-foreground-default);
+}
+.eml-compare-title-muted { color: var(--inm-color-foreground-muted); }
+
+.eml-compare-fields {
+  display:        flex;
+  flex-direction: column;
+}
+
+.eml-compare-field {
+  padding:       var(--inm-space-2) var(--inm-space-2);
+  border-bottom: 1px solid var(--inm-color-border-subtle);
+
+  /* Diff highlight on Dispensierung column when value deviates from V —
+     same Abweichung-yellow token as the eML source-table diff rows. */
+  &.diff { background: var(--inm-color-status-warning-tint); }
+}
+
+.eml-compare-label {
+  margin-bottom:  2px;
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-label);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color:          var(--inm-color-foreground-subtle);
+}
+
+.eml-compare-value {
+  font-family: var(--inm-font-family-default);
+  font-size:   var(--inm-font-size-body);
+  font-weight: var(--inm-font-weight-semibold);
+  color:       var(--inm-color-foreground-default);
+}
+
+/* ── eML source info block ──────────────────────────────────────── */
+
+.eml-source-info {
+  background:    var(--inm-color-surface-accent);
+  border:        1px solid var(--inm-color-border-subtle);
+  border-radius: var(--inm-radius-input);
+  padding:       var(--inm-space-2) var(--inm-space-3);
+  display:       flex;
+  flex-direction: column;
+  gap:           var(--inm-space-1);
+}
+
+.eml-source-row {
+  display:     flex;
+  align-items: center;
+  gap:         var(--inm-space-2);
+  font-family: var(--inm-font-family-default);
+  font-size:   var(--inm-font-size-caption);
+}
+
+.eml-source-label   { color: var(--inm-color-foreground-subtle); }
+.eml-source-date    { color: var(--inm-color-foreground-subtle); }
+.eml-source-provider { color: var(--inm-color-foreground-moderate); }
+
+.eml-med-summary {
+  font-family: var(--inm-font-family-default);
+  font-size:   var(--inm-font-size-body);
+  color:       var(--inm-color-foreground-default);
+}
+
+/* ── Modal-actions separator — divides primary action from secondary ones ── */
+
+.action-separator {
+  width:        1px;
+  align-self:   stretch;
+  margin-block: var(--inm-space-1);
+  background:   var(--inm-color-border-subtle);
+}

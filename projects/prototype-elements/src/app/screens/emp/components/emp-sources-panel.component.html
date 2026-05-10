@@ -1,0 +1,118 @@
+<div class="sources-heading">
+  <span class="src-header-group">
+    <span class="quellen-title">Quellen</span>
+    <inm-hotkey key="Alt+B" />
+    <inm-hotkey key="↑ ↓ ← →" />
+  </span>
+  <span class="sources-legend-wrap">
+    <span class="sources-legend diff">Abweichung</span>
+    <span class="sources-legend in-plan">im Plan</span>
+    <span class="sources-legend used">nicht im aktuellen Plan</span>
+    <label class="sources-toggle">
+      <input type="checkbox" [checked]="hideUsed"
+        (change)="onToggleHideUsed($any($event.target).checked)" />
+      <span class="switch-slider"></span>
+      <span>Bereits übernommene ausblenden</span>
+    </label>
+  </span>
+</div>
+
+<div class="sources-panel" [class.hide-used]="hideUsed">
+
+  <!-- ── eML ── -->
+  <div class="source-col">
+    <div class="source-header">
+      <span class="src-title">Medikamentenliste - eML</span>
+      <inm-button variant="text" size="m" iconLeft="plus" hotkey="Alt+H">
+        Hinzufügen
+      </inm-button>
+    </div>
+    <div class="source-body">
+      @for (row of filteredEml(); track row.id) {
+        <div class="source-row"
+          [class.used]="row.uebernommen"
+          [class.abweichung]="row.abweichung"
+          (click)="onEmlRow(row)">
+          <span class="src-mark" title="nicht im aktuellen Plan"></span>
+          <div class="source-row-main">
+            <span class="source-row-text"
+              [innerHTML]="(row.wirkstoff + ', ' + row.handelsname + ' ' + row.staerke) | inmHighlight: q()"></span>
+          </div>
+          <div class="source-row-actions" (click)="$event.stopPropagation()">
+            <button class="row-act-btn" title="Editieren und übernehmen"
+              (click)="onEmlImport(row, $event)">
+              <i class="ph-bold ph-arrow-up-right"></i>
+            </button>
+            <button class="row-act-btn dots" title="Weitere Aktionen"
+              (click)="onEmlMenu($event)">
+              <i class="ph-bold ph-dots-three-vertical"></i>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── Karteikarte ── -->
+  <div class="source-col">
+    <div class="source-header">
+      <span class="src-title">Karteikarte</span>
+    </div>
+    <div class="source-body">
+      @for (row of filteredKk(); track row.id) {
+        <div class="source-row kk-row"
+          [class.used]="row.used"
+          (click)="onKkRow(row)">
+          <span class="src-mark" title="nicht im aktuellen Plan"></span>
+          <div class="source-row-main">
+            <span class="source-row-text kk-text"
+              [innerHTML]="row.text | inmHighlight: q()"></span>
+          </div>
+          <div class="source-row-actions" (click)="$event.stopPropagation()">
+            <button class="row-act-btn" title="Editieren und übernehmen"
+              (click)="onKkImport(row, $event)">
+              <i class="ph-bold ph-arrow-up-right"></i>
+            </button>
+            <button class="row-act-btn dots" title="Weitere Aktionen"
+              (click)="onKkMenu($event)">
+              <i class="ph-bold ph-dots-three-vertical"></i>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── Vergangene Pläne ── -->
+  <div class="source-col">
+    <div class="source-header">
+      <span class="src-title">Vergangene Pläne</span>
+    </div>
+    <div class="source-body">
+      @for (entry of filteredPlans(); track entry.plan.datum) {
+        <div class="source-row" [class.vp-match]="entry.hits > 0" (click)="onPlanClick(entry.plan)">
+          <div class="source-row-main">
+            <span class="source-row-text">{{ entry.plan.datum }}</span>
+          </div>
+          <span class="source-row-meta">
+            {{ entry.plan.meds.length }} Medikamente
+            @if (entry.hits > 0) {
+              · <mark class="inm-search-hl">{{ entry.hits }} Treffer</mark>
+            }
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── BMP ── -->
+  <div class="source-col">
+    <div class="source-header">
+      <span class="src-title">Bundeseinheitlicher Medikationsplan</span>
+    </div>
+    <div class="source-body bmp-empty">
+      Nach Einlesen des BMP bzw. Scannen des QR-Codes
+    </div>
+  </div>
+
+</div>

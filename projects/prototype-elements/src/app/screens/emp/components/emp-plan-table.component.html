@@ -1,0 +1,167 @@
+<div class="plan-table">
+
+  <div class="table-header">
+    <div class="col-expand"></div>
+    <div class="col-wirkstoff">Wirkstoff</div>
+    <div class="col-handelsname">Handelsname</div>
+    <div class="col-staerke">Stärke</div>
+    <div class="col-form">Form</div>
+    <div class="col-dosierangabe">Dosierangabe</div>
+    <div class="col-art">Art</div>
+    <div class="col-grund">Grund</div>
+    <div class="col-rw">RW</div>
+    <div class="col-hinweis-mit">Hinweis f. Mitbehandler</div>
+    <div class="col-hinweis-vers">Hinweis f. Versicherte</div>
+    <div class="col-menu" aria-hidden="true"></div>
+  </div>
+
+  <!-- Aktive Medikation -->
+  @if (!q() || filteredAktive().length > 0) {
+    <div class="group-divider" (click)="onGroup('aktiv')">
+      <i class="ph-bold ph-caret-down group-caret" [class.collapsed]="isCollapsed('aktiv')"></i>
+      <span>Aktive Medikation</span>
+      @if (q() && filteredAktive().length > 0) {
+        <span class="treffer-badge">({{ filteredAktive().length }} Treffer)</span>
+      }
+    </div>
+
+    @if (!isCollapsed('aktiv')) {
+      @for (med of filteredAktive(); track med.id) {
+        <div class="med-row" [class.expanded]="isExpanded(med.id)">
+          <div class="row-main" (click)="onRowClick(med, $event)">
+            <div class="col-expand">
+              <button class="expand-btn" [class.open]="isExpanded(med.id)"
+                (click)="onExpand(med.id, $event)">
+                <i class="ph-bold ph-caret-right"></i>
+              </button>
+            </div>
+            <div class="col-wirkstoff"   [innerHTML]="med.wirkstoff   | inmHighlight: q()"></div>
+            <div class="col-handelsname" [innerHTML]="med.handelsname | inmHighlight: q()"></div>
+            <div class="col-staerke"     [innerHTML]="med.staerke     | inmHighlight: q()"></div>
+            <div class="col-form"        [innerHTML]="med.form        | inmHighlight: q()"></div>
+            <div class="col-dosierangabe" (click)="onDosageEdit(med, $event)"
+              title="Dosierung bearbeiten">
+              <span class="dos-text" [innerHTML]="med.dosierung | inmHighlight: q()"></span>
+              <button class="dos-edit-btn" aria-label="Dosierung bearbeiten">
+                <i class="ph-bold ph-pencil-simple"></i>
+              </button>
+            </div>
+            <div class="col-art">
+              <span class="art-text">{{ med.art }}</span>
+            </div>
+            <div class="col-grund"       [innerHTML]="med.grund       | inmHighlight: q()"></div>
+            <div class="col-rw">{{ med.rw > 0 ? med.rw : '' }}</div>
+            <div class="col-hinweis-mit"  [innerHTML]="med.details.mitbehandler              | inmHighlight: q()"></div>
+            <div class="col-hinweis-vers" [innerHTML]="(med.details.versicherte || med.hinweise) | inmHighlight: q()"></div>
+            <div class="col-menu" (click)="$event.stopPropagation()">
+              <button class="row-action-btn" title="Aktionen" (click)="onMenu(med, $event)">
+                <i class="ph-bold ph-dots-three-vertical"></i>
+              </button>
+            </div>
+          </div>
+
+          @if (isExpanded(med.id)) {
+            <div class="row-detail">
+              <div class="history-band">
+                <span class="history-band-title">Verschreibungshistorie (eML)</span>
+                <span class="history-band-meta">
+                  <span class="strip-label">BEGINN</span>
+                  <span class="strip-value">{{ med.details.beginn }}</span>
+                  <span class="strip-label">ENDE</span>
+                  <span class="strip-value">{{ med.details.ende || '—' }}</span>
+                  <span class="strip-label">ICD-10</span>
+                  <span class="strip-value">{{ med.details.icd || '—' }}</span>
+                </span>
+              </div>
+
+              @if (med.details.historie.length > 0) {
+                @for (h of med.details.historie; track h.datum + h.typ) {
+                  <div class="history-row">
+                    <div class="hist-col-date">
+                      <span class="hist-date-line">
+                        {{ h.datum }}
+                        <inm-badge [variant]="h.typ === 'V' ? 'hist-v' : 'hist-d'">{{ h.typ }}</inm-badge>
+                      </span>
+                      <span class="hist-provider">{{ h.arzt ?? h.apotheke }}</span>
+                    </div>
+                    <div class="hist-col-handelsname" [innerHTML]="h.handelsname | inmHighlight: q()"></div>
+                    <div class="hist-col-staerke"     [innerHTML]="h.staerke     | inmHighlight: q()"></div>
+                    <div class="hist-col-form"        [innerHTML]="h.form        | inmHighlight: q()"></div>
+                    <div class="hist-col-dosierangabe">
+                      <span [innerHTML]="h.dos | inmHighlight: q()"></span>
+                      @if (h.geaendert) { <inm-badge variant="changed">Geändert</inm-badge> }
+                    </div>
+                    <div class="hist-col-action">
+                      <button class="enkoppeln-btn" title="Verknüpfung lösen">
+                        <i class="ph-bold ph-link-break"></i>
+                        <span>Verknüpfung lösen</span>
+                      </button>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+
+  <!-- Pausierte Medikation -->
+  @if (!q() || filteredPausiert().length > 0) {
+    <div class="group-divider" (click)="onGroup('pausiert')">
+      <i class="ph-bold ph-caret-down group-caret" [class.collapsed]="isCollapsed('pausiert')"></i>
+      <span>Pausierte Medikation</span>
+      @if (q() && filteredPausiert().length > 0) {
+        <span class="treffer-badge">({{ filteredPausiert().length }} Treffer)</span>
+      }
+    </div>
+    @if (!isCollapsed('pausiert')) {
+      @for (med of filteredPausiert(); track med.id) {
+        <div class="med-row row-paused">
+          <div class="row-main">
+            <div class="col-expand"></div>
+            <div class="col-wirkstoff"    [innerHTML]="med.wirkstoff   | inmHighlight: q()"></div>
+            <div class="col-handelsname"  [innerHTML]="med.handelsname | inmHighlight: q()"></div>
+            <div class="col-staerke"      [innerHTML]="med.staerke     | inmHighlight: q()"></div>
+            <div class="col-form"         [innerHTML]="med.form        | inmHighlight: q()"></div>
+            <div class="col-dosierangabe" (click)="onDosageEdit(med, $event)"
+              title="Dosierung bearbeiten">
+              <span class="dos-text" [innerHTML]="med.dosierung | inmHighlight: q()"></span>
+              <button class="dos-edit-btn" aria-label="Dosierung bearbeiten">
+                <i class="ph-bold ph-pencil-simple"></i>
+              </button>
+            </div>
+            <div class="col-art">
+              <span class="art-text">{{ med.art }}</span>
+            </div>
+            <div class="col-grund"        [innerHTML]="med.grund       | inmHighlight: q()"></div>
+            <div class="col-rw"></div>
+            <div class="col-hinweis-mit"  [innerHTML]="med.details.mitbehandler              | inmHighlight: q()"></div>
+            <div class="col-hinweis-vers" [innerHTML]="(med.details.versicherte || med.hinweise) | inmHighlight: q()"></div>
+            <div class="col-menu">
+              <button class="row-action-btn" title="Aktionen" (click)="onMenu(med, $event)">
+                <i class="ph-bold ph-dots-three-vertical"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  }
+
+  <!-- Geplante Medikation -->
+  @if (!q() || filteredGeplant().length > 0) {
+    <div class="group-divider" (click)="onGroup('geplant')">
+      <i class="ph-bold ph-caret-down group-caret" [class.collapsed]="isCollapsed('geplant')"></i>
+      <span>Geplante Medikation</span>
+      @if (q() && filteredGeplant().length > 0) {
+        <span class="treffer-badge">({{ filteredGeplant().length }} Treffer)</span>
+      }
+    </div>
+    @if (!isCollapsed('geplant') && filteredGeplant().length === 0) {
+      <div class="empty-state">Keine geplante Medikation</div>
+    }
+  }
+
+</div>

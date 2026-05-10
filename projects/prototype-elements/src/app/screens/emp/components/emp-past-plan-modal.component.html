@@ -1,0 +1,77 @@
+@if (plan) {
+  <inm-modal
+    [open]="open"
+    [title]="'Plan vom ' + plan.datum"
+    width="960px"
+    [dismissable]="false"
+    (closed)="onClose()">
+
+    <span modal-title-after class="modal-title-context">
+      <span class="value">{{ patient.id }}</span>,
+      <span class="value">{{ patient.name }}</span>
+      <span class="value">{{ patient.birthDate }}</span>
+      <span class="meta">(<span class="value">{{ patient.age }}</span> J)</span>
+      <span class="value">{{ patient.gender }}</span>
+    </span>
+
+    <div class="pp-toolbar">
+      <span class="legend-wrap">
+        <span class="legend diff">Abweichung</span>
+        <span class="legend in-plan">im Plan</span>
+        <span class="legend used">nicht im aktuellen Plan</span>
+        <label class="hide-toggle">
+          <input type="checkbox"
+            [checked]="hideUsed()"
+            (change)="toggleHideUsed($any($event.target).checked)" />
+          <span class="switch-slider"></span>
+          <span>Bereits übernommene ausblenden</span>
+        </label>
+      </span>
+    </div>
+
+    <div class="pp-body">
+      <table class="pp-table">
+        <thead>
+          <tr>
+            <th>Wirkstoff</th>
+            <th>Handelsname</th>
+            <th>Stärke</th>
+            <th>Form</th>
+            <th>Dosierangabe</th>
+            <th>Grund</th>
+            <th class="action-col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of rows(); track m.wirkstoff + m.handelsname) {
+            <tr [class.used]="m.used"
+              [class.pp-match]="m.matches && !m.used"
+              [style.cursor]="m.used ? 'default' : 'pointer'"
+              (click)="!m.used && onAdopt(m)">
+              <td><span class="src-mark"></span><span [innerHTML]="m.wirkstoff | inmHighlight: q()"></span></td>
+              <td [innerHTML]="m.handelsname | inmHighlight: q()"></td>
+              <td [innerHTML]="m.staerke     | inmHighlight: q()"></td>
+              <td [innerHTML]="m.form        | inmHighlight: q()"></td>
+              <td [innerHTML]="m.dosierung   | inmHighlight: q()"></td>
+              <td [innerHTML]="m.grund       | inmHighlight: q()"></td>
+              <td class="action-col">
+                @if (m.used) {
+                  <span class="adopted-label">Bereits im Plan</span>
+                } @else {
+                  <button class="adopt-btn"
+                    (click)="$event.stopPropagation(); onAdopt(m)">
+                    <i class="ph ph-plus"></i> Editieren und übernehmen
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button variant="normal" size="l" (click)="onClose()">Schließen</inm-button>
+    </ng-container>
+  </inm-modal>
+}

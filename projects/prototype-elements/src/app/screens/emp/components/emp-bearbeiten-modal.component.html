@@ -1,0 +1,353 @@
+@if (med) {
+  <inm-modal
+    [open]="open"
+    title="Medikament bearbeiten"
+    width="640px"
+    [dismissable]="false"
+    (closed)="onClose()">
+
+    <span modal-title-after class="modal-title-context">
+      <span class="value">{{ patient.id }}</span>,
+      <span class="value">{{ patient.name }}</span>
+      <span class="value">{{ patient.birthDate }}</span>
+      <span class="meta">(<span class="value">{{ patient.age }}</span> J)</span>
+      <span class="value">{{ patient.gender }}</span>
+    </span>
+
+    <!-- Top action row — slot owns padding + flex layout -->
+    <inm-button modal-actions variant="akzent" size="m" iconLeft="repeat">Wiederholen</inm-button>
+    <inm-button modal-actions variant="akzent" size="m" iconLeft="swap"
+      (click)="onAustausch()">m. Austausch</inm-button>
+    <inm-button modal-actions variant="akzent" size="m" iconLeft="pause"
+      (click)="onPausieren()">Pausieren</inm-button>
+    <inm-button modal-actions variant="destructive-akzent" size="m" iconLeft="stop-circle"
+      (click)="onBeenden()">Beenden</inm-button>
+
+    <div class="modal-body-pad modal-form">
+
+      <!-- A) Readonly medication header -->
+      <inm-pattern-key-value-list title="Medikament">
+        <inm-pattern-key-value-row label="Wirkstoff"   [value]="med.wirkstoff" />
+        <inm-pattern-key-value-row label="Handelsname"
+          [value]="med.handelsname + ' ' + med.staerke" />
+        <inm-pattern-key-value-row label="Stärke"      [value]="med.staerke" />
+        <inm-pattern-key-value-row label="Form"        [value]="med.form" />
+      </inm-pattern-key-value-list>
+
+      <!-- B) Dosierung -->
+      <div class="form-row form-row-2col">
+        <inm-select label="Dosierungstyp"
+          [options]="dosistypOptions"
+          [ngModel]="editDosistyp()"
+          (ngModelChange)="editDosistyp.set($event)" />
+        <inm-select label="Einheit"
+          [options]="einheitOptions"
+          [ngModel]="editEinheit()"
+          (ngModelChange)="editEinheit.set($event)" />
+      </div>
+
+      @if (editDosistyp() === 'taeglich-tz') {
+        <!-- Wrapper anchors the floating suggestion list below the grid. -->
+        <div class="dosage-tz-wrap">
+        <div class="dosage-grid">
+          <div class="dos-col">
+            <span class="dos-col-label">Morgens</span>
+            <input class="dos-input-num" type="number" step="0.5" min="0"
+              [value]="editDosage().morgens"
+              (focus)="onDosageFocus()"
+              (blur)="onDosageBlur()"
+              (keydown)="onDosageKeydown($event)"
+              role="combobox"
+              [attr.aria-expanded]="dosageSuggestionsOpen()"
+              aria-controls="dosage-suggestions-list"
+              [attr.aria-activedescendant]="activeSuggestionIdx() >= 0 ? 'dosage-suggestion-' + activeSuggestionIdx() : null"
+              (input)="editDosage.set({...editDosage(), morgens: $any($event.target).value})" />
+          </div>
+          <div class="dos-col">
+            <span class="dos-col-label">Mittags</span>
+            <input class="dos-input-num" type="number" step="0.5" min="0"
+              [value]="editDosage().mittags"
+              (focus)="onDosageFocus()"
+              (blur)="onDosageBlur()"
+              (keydown)="onDosageKeydown($event)"
+              role="combobox"
+              [attr.aria-expanded]="dosageSuggestionsOpen()"
+              aria-controls="dosage-suggestions-list"
+              [attr.aria-activedescendant]="activeSuggestionIdx() >= 0 ? 'dosage-suggestion-' + activeSuggestionIdx() : null"
+              (input)="editDosage.set({...editDosage(), mittags: $any($event.target).value})" />
+          </div>
+          <div class="dos-col">
+            <span class="dos-col-label">Abends</span>
+            <input class="dos-input-num" type="number" step="0.5" min="0"
+              [value]="editDosage().abends"
+              (focus)="onDosageFocus()"
+              (blur)="onDosageBlur()"
+              (keydown)="onDosageKeydown($event)"
+              role="combobox"
+              [attr.aria-expanded]="dosageSuggestionsOpen()"
+              aria-controls="dosage-suggestions-list"
+              [attr.aria-activedescendant]="activeSuggestionIdx() >= 0 ? 'dosage-suggestion-' + activeSuggestionIdx() : null"
+              (input)="editDosage.set({...editDosage(), abends: $any($event.target).value})" />
+          </div>
+          <div class="dos-col">
+            <span class="dos-col-label">Nachts</span>
+            <input class="dos-input-num" type="number" step="0.5" min="0"
+              [value]="editDosage().nachts"
+              (focus)="onDosageFocus()"
+              (blur)="onDosageBlur()"
+              (keydown)="onDosageKeydown($event)"
+              role="combobox"
+              [attr.aria-expanded]="dosageSuggestionsOpen()"
+              aria-controls="dosage-suggestions-list"
+              [attr.aria-activedescendant]="activeSuggestionIdx() >= 0 ? 'dosage-suggestion-' + activeSuggestionIdx() : null"
+              (input)="editDosage.set({...editDosage(), nachts: $any($event.target).value})" />
+          </div>
+        </div>
+
+        @if (dosageSuggestionsOpen() && filteredDosagePatterns().length > 0) {
+          <!-- Floating overlay — position:absolute on .dosage-suggestions
+               keeps the list above subsequent content (Vorschau, etc).
+               Filtered live by what's already typed in the 4 inputs. -->
+          <ul class="dosage-suggestions" role="listbox"
+            id="dosage-suggestions-list"
+            aria-label="Häufige Dosierungs-Schemen"
+            (mousedown)="$event.preventDefault()">
+            @for (p of filteredDosagePatterns(); track p.label; let i = $index) {
+              <li class="dosage-suggestion"
+                role="option"
+                [id]="'dosage-suggestion-' + i"
+                [class.active]="activeSuggestionIdx() === i"
+                [attr.aria-selected]="activeSuggestionIdx() === i"
+                (mouseenter)="activeSuggestionIdx.set(i)"
+                (mousedown)="applyDosagePattern(p.values)">
+                <span class="chip-pattern">{{ p.values.join('-') }}</span>
+                <span class="chip-label">{{ p.label }}</span>
+              </li>
+            }
+          </ul>
+        }
+        </div><!-- /.dosage-tz-wrap -->
+
+        <inm-vorschau-box
+          variant="preview"
+          label="Vorschau"
+          [text]="vorschauTaeglichTz()"
+          emptyText="Noch keine Dosierung eingegeben." />
+      } @else if (editDosistyp() === 'taeglich-uz') {
+        <div class="uz-rows">
+          @for (row of editUzRows(); track $index) {
+            <div class="uz-row">
+              <input type="time" class="uz-time-input"
+                [value]="row.time"
+                (input)="updateUzRow($index, { time: $any($event.target).value })" />
+              <input class="dos-input-num" type="number" step="0.5" min="0"
+                [value]="row.amount"
+                (input)="updateUzRow($index, { amount: $any($event.target).value })" />
+              <button type="button" class="uz-remove-btn"
+                aria-label="Zeile entfernen" (click)="removeUzRow($index)">×</button>
+            </div>
+          }
+        </div>
+        <inm-button variant="text" size="m" iconLeft="plus" (click)="addUzRow()">
+          Uhrzeit hinzufügen
+        </inm-button>
+
+        <inm-vorschau-box
+          variant="preview"
+          label="Vorschau"
+          [text]="vorschauTaeglichUz()"
+          emptyText="Noch keine Dosierung eingegeben." />
+      } @else if (editDosistyp() === 'woechentlich') {
+        <!-- Mode toggle — applies to NEW edits; saved days keep their own mode -->
+        <div class="sub-toggle-row">
+          <span class="sub-toggle-label">Modus:</span>
+          <button type="button" class="sub-toggle"
+            [class.active]="editWkMode() === 'tz'"
+            (click)="setWkMode('tz')">Tageszeiten</button>
+          <button type="button" class="sub-toggle"
+            [class.active]="editWkMode() === 'uz'"
+            (click)="setWkMode('uz')">Uhrzeiten</button>
+        </div>
+
+        <div class="wk-rows">
+          @for (day of editWkDays(); track day.day; let i = $index) {
+            @if (editingWkDayIndex() === i) {
+              <!-- Inline editor for this day; sub-panel switches with editWkMode() -->
+              <div class="wk-row wk-row-editing">
+                <span class="wk-day-label">{{ day.day }}</span>
+                <div class="wk-edit-body">
+                  @if (editWkMode() === 'tz') {
+                    <div class="dosage-grid">
+                      @for (label of ['Morgens','Mittags','Abends','Nachts']; track label; let s = $index) {
+                        <div class="dos-col">
+                          <span class="dos-col-label">{{ label }}</span>
+                          <input class="dos-input-num" type="number" step="0.5" min="0"
+                            [value]="day.tzVals[s]"
+                            (input)="updateWkTz(i, s, $any($event.target).value)" />
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="uz-rows">
+                      @for (pair of day.uzPairs; track $index; let p = $index) {
+                        <div class="uz-row">
+                          <input type="time" class="uz-time-input"
+                            [value]="pair.time"
+                            (input)="updateWkUzPair(i, p, { time: $any($event.target).value })" />
+                          <input class="dos-input-num" type="number" step="0.5" min="0"
+                            [value]="pair.qty"
+                            (input)="updateWkUzPair(i, p, { qty: $any($event.target).value })" />
+                          <button type="button" class="uz-remove-btn"
+                            aria-label="Zeile entfernen"
+                            (click)="removeWkUzPair(i, p)">×</button>
+                        </div>
+                      }
+                      <inm-button variant="text" size="m" iconLeft="plus"
+                        (click)="addWkUzPair(i)">Uhrzeit hinzufügen</inm-button>
+                    </div>
+                  }
+                </div>
+                <inm-button variant="primary" size="m" (click)="closeWkDay()">OK</inm-button>
+              </div>
+            } @else {
+              <!-- Collapsed row — summary chip + pencil -->
+              <div class="wk-row" (click)="openWkDay(i)">
+                <span class="wk-day-label">{{ day.day }}</span>
+                <span class="wk-summary" [class.empty]="day.mode === null">
+                  {{ wkDaySummary(day) }}
+                </span>
+                <button type="button" class="wk-edit-btn"
+                  aria-label="{{ day.day }} bearbeiten"
+                  (click)="$event.stopPropagation(); openWkDay(i)">
+                  <i class="ph-bold ph-pencil-simple"></i>
+                </button>
+              </div>
+            }
+          }
+        </div>
+
+        <inm-vorschau-box
+          variant="preview"
+          label="Vorschau"
+          [text]="vorschauWoechentlich()"
+          emptyText="Noch keine Dosierung eingegeben." />
+      } @else if (editDosistyp() === 'intervall') {
+        <div class="iv-row">
+          <span class="iv-label">alle</span>
+          <input class="dos-input-num iv-n-input" type="number" min="1"
+            [value]="editIvN()"
+            (input)="editIvN.set($any($event.target).value)" />
+          <inm-select
+            [options]="intervalUnitOptions"
+            [ngModel]="editIvUnit()"
+            (ngModelChange)="editIvUnit.set($event)" />
+        </div>
+
+        <div class="sub-toggle-row">
+          <button type="button" class="sub-toggle"
+            [class.active]="editIvMode() === 'tz'"
+            (click)="setIvMode('tz')">Tageszeiten</button>
+          <button type="button" class="sub-toggle"
+            [class.active]="editIvMode() === 'uz'"
+            (click)="setIvMode('uz')">Uhrzeiten</button>
+        </div>
+
+        @if (editIvMode() === 'tz') {
+          <div class="dosage-grid">
+            @for (label of ['Morgens','Mittags','Abends','Nachts']; track label; let s = $index) {
+              <div class="dos-col">
+                <span class="dos-col-label">{{ label }}</span>
+                <input class="dos-input-num" type="number" step="0.5" min="0"
+                  [value]="s === 0 ? editIvDosage().morgens : s === 1 ? editIvDosage().mittags : s === 2 ? editIvDosage().abends : editIvDosage().nachts"
+                  (input)="editIvDosage.set(s === 0 ? {...editIvDosage(), morgens: $any($event.target).value} : s === 1 ? {...editIvDosage(), mittags: $any($event.target).value} : s === 2 ? {...editIvDosage(), abends: $any($event.target).value} : {...editIvDosage(), nachts: $any($event.target).value})" />
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="uz-rows">
+            @for (row of editIvUzRows(); track $index; let i = $index) {
+              <div class="uz-row">
+                <input type="time" class="uz-time-input"
+                  [value]="row.time"
+                  (input)="updateIvUzRow(i, { time: $any($event.target).value })" />
+                <input class="dos-input-num" type="number" step="0.5" min="0"
+                  [value]="row.amount"
+                  (input)="updateIvUzRow(i, { amount: $any($event.target).value })" />
+                <button type="button" class="uz-remove-btn"
+                  aria-label="Zeile entfernen" (click)="removeIvUzRow(i)">×</button>
+              </div>
+            }
+            <inm-button variant="text" size="m" iconLeft="plus" (click)="addIvUzRow()">
+              Uhrzeit hinzufügen
+            </inm-button>
+          </div>
+        }
+
+        <inm-vorschau-box
+          variant="preview"
+          label="Vorschau"
+          [text]="vorschauIntervall()"
+          emptyText="Noch keine Dosierung eingegeben." />
+      }
+
+      <hr class="modal-divider" />
+
+      <!-- C) Eintragsdaten — Grund hat eine datalist mit gängigen Indikationen -->
+      <div class="form-row form-row-2col">
+        <inm-input label="Grund" list="grund-options"
+          [ngModel]="editGrund()"
+          (ngModelChange)="editGrund.set($event)" />
+        <inm-input label="ICD-10" placeholder="z. B. I50.0"
+          [ngModel]="editIcd()"
+          (ngModelChange)="editIcd.set($event)" />
+      </div>
+      <datalist id="grund-options">
+        @for (g of grundSuggestions; track g) { <option [value]="g"></option> }
+      </datalist>
+      <div class="form-row form-row-2col">
+        <inm-input label="Beginn" type="date" [ngModel]="editBeginn()"
+          (ngModelChange)="editBeginn.set($event)" />
+        <inm-input label="Ende (optional)" type="date" [ngModel]="editEnde()"
+          (ngModelChange)="editEnde.set($event)" />
+      </div>
+
+      <hr class="modal-divider" />
+
+      <!-- D) Hinweise — moved to the bottom; optional, low-priority fields.
+           Native HTML5 <datalist> drives the autocomplete suggestions. -->
+      <div class="form-row">
+        <inm-input
+          label="Hinweis f. Versicherte (optional)"
+          list="hinweise-versicherte-options"
+          [ngModel]="editVersicherte()"
+          (ngModelChange)="editVersicherte.set($event)" />
+      </div>
+      <div class="form-row">
+        <inm-input
+          label="Hinweis f. Mitbehandler (optional)"
+          list="hinweise-mitbehandler-options"
+          [ngModel]="editMitbehandler()"
+          (ngModelChange)="editMitbehandler.set($event)" />
+      </div>
+
+      <datalist id="hinweise-versicherte-options">
+        @for (v of hinweisVersicherteSuggestions; track v) {
+          <option [value]="v"></option>
+        }
+      </datalist>
+      <datalist id="hinweise-mitbehandler-options">
+        @for (v of hinweisMitbehandlerSuggestions; track v) {
+          <option [value]="v"></option>
+        }
+      </datalist>
+
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button variant="primary" size="l" iconLeft="floppy-disk" (click)="saveBearbeiten()">
+        Speichern
+      </inm-button>
+      <inm-button variant="normal" size="l" (click)="onClose()">Abbrechen</inm-button>
+    </ng-container>
+  </inm-modal>
+}

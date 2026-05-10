@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-inm-action-primary:       var(--inm-color-action-primary);
+  --color-inm-surface-default:      var(--inm-color-surface-default);
+  --color-inm-surface-accent:       var(--inm-color-surface-accent);
+  --color-inm-foreground-default:   var(--inm-color-foreground-default);
+  --color-inm-foreground-subtle:    var(--inm-color-foreground-subtle);
+}

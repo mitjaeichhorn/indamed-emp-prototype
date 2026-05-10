@@ -1,0 +1,356 @@
+:host {
+  display:        flex;
+  flex:           2;
+  flex-direction: column;
+  border-bottom:  2px solid var(--inm-color-border-default);
+  overflow:       hidden;
+  min-height:     0;
+}
+
+/* ── Plan grid columns (shared by header + rows + history rows).
+   Art sits right next to Dosierangabe; the row-action menu (three-dot)
+   gets its own column at the far right. */
+%plan-grid {
+  display:               grid;
+  grid-template-columns:
+    24px                       /* 1  expand caret */
+    minmax(110px, 1fr)         /* 2  Wirkstoff */
+    minmax(140px, 1.4fr)       /* 3  Handelsname */
+    72px                       /* 4  Stärke */
+    56px                       /* 5  Form */
+    minmax(110px, 1fr)         /* 6  Dosierangabe */
+    40px                       /* 7  Art */
+    minmax(110px, 1fr)         /* 8  Grund */
+    36px                       /* 9  RW */
+    minmax(120px, 1.2fr)       /* 10 Hinweis Mit */
+    minmax(120px, 1.2fr)       /* 11 Hinweis Vers */
+    32px;                      /* 12 Row-action menu */
+  align-items: center;
+}
+
+.plan-table {
+  flex:       1;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-height: 0;
+}
+
+.table-header {
+  @extend %plan-grid;
+  position:      sticky;
+  top:           0;
+  z-index:       1;
+  height:        28px;
+  padding:       0 var(--inm-space-2);
+  background:    var(--inm-color-surface-chrome);
+  border-bottom: 1px solid var(--inm-color-border-default);
+  font-family:   var(--inm-font-family-default);
+  font-size:     var(--inm-font-size-label);
+  font-weight:   var(--inm-font-weight-semibold);
+  color:         var(--inm-color-foreground-subtle);
+  user-select:   none;
+
+  > div {
+    padding:       0 4px;
+    white-space:   nowrap;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.col-rw, .col-art { text-align: left; }
+
+/* Header column row — uniform subtle color for ALL columns. */
+.table-header > div { color: inherit; font-weight: var(--inm-font-weight-semibold); }
+
+/* ── Group divider rows ─────────────────────────────────────────── */
+
+.group-divider {
+  display:        flex;
+  align-items:    center;
+  gap:            var(--inm-space-1);
+  height:         24px;
+  padding:        0 var(--inm-space-2);
+  background:     var(--inm-color-surface-accent);
+  border-top:     1px solid var(--inm-color-border-subtle);
+  border-bottom:  1px solid var(--inm-color-border-subtle);
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-label);
+  font-weight:    var(--inm-font-weight-bold);
+  color:          var(--inm-color-foreground-default);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  user-select:    none;
+  cursor:         pointer;
+
+  &:hover { background: var(--inm-color-surface-accent-moderate); }
+}
+
+.group-caret {
+  font-size:    var(--inm-font-size-label);
+  color:        var(--inm-color-foreground-brand);
+  transition:   transform 0.15s ease;
+
+  &.collapsed { transform: rotate(-90deg); }
+}
+
+/* "(N Treffer)" badge appended to a group divider when search is active */
+.treffer-badge {
+  margin-left:    var(--inm-space-2);
+  font-weight:    var(--inm-font-weight-regular);
+  text-transform: none;
+  letter-spacing: 0;
+  color:          var(--inm-color-foreground-subtle);
+}
+
+/* ── Medication rows ────────────────────────────────────────────── */
+
+.med-row { border-bottom: 1px solid var(--inm-color-border-subtle); }
+
+.row-main {
+  @extend %plan-grid;
+  align-items: start;
+  min-height:  var(--inm-table-row-height);
+  padding:     4px var(--inm-space-2);
+  cursor:      pointer;
+  background:  var(--inm-color-surface-default);
+  transition:  background 0.1s ease;
+  font-family: var(--inm-font-family-default);
+  font-size:   var(--inm-font-size-caption);
+  line-height: 1.3;
+  color:       var(--inm-color-foreground-default);
+
+  > div {
+    padding:     0 4px;
+    white-space: normal;
+    overflow:    visible;
+    word-break:  break-word;
+  }
+
+  &:hover { background: var(--inm-color-surface-row-hover); }
+}
+
+/* Column-specific styling — only inside data rows. */
+.row-main .col-wirkstoff,
+.history-row .hist-col-wirkstoff { font-weight: var(--inm-font-weight-semibold); }
+
+.row-main .col-rw {
+  color:       var(--inm-color-status-warning-text);
+  font-weight: var(--inm-font-weight-semibold);
+}
+
+/* Dosierangabe is editable inline — hover paints a blue outline INSIDE
+   the cell (negative outline-offset keeps it within the cell bounds and
+   off neighbouring cells); button-radius rounds the outline corners to
+   match the rest of the design language. */
+.row-main .col-dosierangabe {
+  display:       flex;
+  align-items:   center;
+  gap:           var(--inm-space-1);
+  border-radius: var(--inm-radius-button);
+  transition:    outline-color 0.1s ease;
+  outline:       1px solid transparent;
+  outline-offset: -1px;
+
+  &:hover { outline-color: var(--inm-color-border-focus); }
+
+  .dos-text { flex: 1; min-width: 0; }
+}
+
+/* Decorative — the whole cell is the hit target; the icon just affords the
+   intent. No separate hover; the cell's outline already signals interactivity. */
+.dos-edit-btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  width:           18px;
+  height:          18px;
+  padding:         0;
+  flex-shrink:     0;
+  border:          none;
+  background:      transparent;
+  color:           var(--inm-color-foreground-subtle);
+  pointer-events:  none;
+
+  i { font-size: var(--inm-font-size-label); }
+}
+
+.row-main .col-art {
+  display:     flex;
+  align-items: center;
+  padding:     0 4px !important;
+}
+
+.row-main .col-menu {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         0 !important;
+  overflow:        visible !important;
+}
+
+.art-text { flex: 1; }
+
+.expand-btn {
+  width:  20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--inm-color-foreground-brand);
+  cursor: pointer;
+  border-radius: var(--inm-radius-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.1s ease;
+
+  i { font-size: var(--inm-font-size-label); transition: transform 0.15s ease; }
+  &.open i { transform: rotate(90deg); }
+  &:hover  { background: var(--inm-color-surface-accent-moderate); }
+}
+
+.row-action-btn {
+  width:  20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--inm-color-foreground-brand);
+  cursor: pointer;
+  border-radius: var(--inm-radius-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+
+  &:hover { background: var(--inm-color-surface-accent-moderate); color: var(--inm-color-foreground-default); }
+}
+
+.row-paused .row-main { color: var(--inm-color-foreground-muted); }
+.row-paused .col-wirkstoff { color: var(--inm-color-foreground-muted); }
+
+/* ── Expanded row (BEGINN/ENDE/ICD + eML history) ───────────────── */
+
+.row-detail {
+  background: var(--inm-color-surface-accent);
+  border-top: 1px solid var(--inm-color-border-subtle);
+}
+
+.history-band {
+  display:        flex;
+  align-items:    center;
+  flex-wrap:      wrap;
+  gap:            var(--inm-space-2) var(--inm-space-3);
+  padding:        6px var(--inm-space-2) 6px 32px;
+  background:     var(--inm-color-surface-history-section);
+  border-bottom:  1px solid var(--inm-color-border-subtle);
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-label);
+}
+
+.history-band-title {
+  font-weight:    var(--inm-font-weight-bold);
+  color:          var(--inm-color-foreground-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.history-band-meta {
+  display:        inline-flex;
+  align-items:    center;
+  gap:            var(--inm-space-2);
+  padding-left:   var(--inm-space-3);
+  border-left:    1px solid var(--inm-color-border-default);
+  font-size:      var(--inm-font-size-label);
+  font-weight:    var(--inm-font-weight-regular);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.strip-label {
+  text-transform: uppercase;
+  font-weight:    var(--inm-font-weight-bold);
+  color:          var(--inm-color-foreground-subtle);
+  letter-spacing: 0.4px;
+  margin-right:   2px;
+}
+
+.strip-value {
+  color:        var(--inm-color-foreground-default);
+  margin-right: var(--inm-space-2);
+}
+
+.history-row {
+  @extend %plan-grid;
+  align-items:   start;
+  padding:       4px var(--inm-space-2);
+  background:    var(--inm-color-surface-history-row);
+  border-left:   3px solid var(--inm-color-border-history-accent);
+  border-bottom: 1px solid var(--inm-color-border-subtle);
+  font-family:   var(--inm-font-family-default);
+  font-size:     var(--inm-font-size-label);
+  line-height:   1.3;
+  color:         var(--inm-color-foreground-default);
+
+  > div {
+    padding:     0 4px;
+    white-space: normal;
+    word-break:  break-word;
+  }
+
+  .hist-col-date {
+    grid-column: 1 / span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: visible;
+  }
+}
+
+.hist-date-line {
+  display:     inline-flex;
+  align-items: center;
+  gap:         4px;
+  font-weight: var(--inm-font-weight-medium);
+}
+
+.hist-provider {
+  color:     var(--inm-color-foreground-subtle);
+  font-size: var(--inm-font-size-label);
+}
+
+/* History rows skip Grund/RW/Hinweise; the action spans the trailing cols
+   so the "Verknüpfung lösen" label has room without breaking onto lines. */
+.hist-col-action {
+  grid-column: 8 / -1;
+  text-align:  right;
+  overflow:    visible !important;
+}
+
+.enkoppeln-btn {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           4px;
+  white-space:   nowrap;
+  background:    transparent;
+  border:        none;
+  color:         var(--inm-color-status-error-text);
+  font-family:   var(--inm-font-family-default);
+  font-size:     var(--inm-font-size-label);
+  font-weight:   var(--inm-font-weight-medium);
+  cursor:        pointer;
+  padding:       2px 4px;
+  border-radius: var(--inm-radius-overlay);
+
+  i { font-size: var(--inm-font-size-caption); }
+  &:hover { background: var(--inm-color-surface-accent-moderate); }
+}
+
+.empty-state {
+  padding:     var(--inm-space-3) var(--inm-space-2) var(--inm-space-3) 32px;
+  font-family: var(--inm-font-family-default);
+  font-size:   var(--inm-font-size-caption);
+  color:       var(--inm-color-foreground-muted);
+  font-style:  italic;
+}

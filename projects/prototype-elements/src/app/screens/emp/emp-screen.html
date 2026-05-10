@@ -1,0 +1,432 @@
+<inm-pattern-dialog-shell
+  windowTitle="dgMP"
+  brand=""
+  [patient]="patient">
+
+  <span chrome-title-after class="chrome-tab">eMP v3</span>
+
+  <div meta-trailing class="patient-trailing">
+    <inm-button variant="text" size="m" iconLeft="printer">Drucken</inm-button>
+    <span class="alt-legend" role="button" tabindex="0"
+      (click)="altHints.toggleSticky()"
+      (keydown.enter)="altHints.toggleSticky()">
+      <inm-hotkey [keys]="['Alt']" action="halten für Tastenkürzel" [alwaysVisible]="true" />
+    </span>
+    <a href="#" class="online-hilfe-link" (click)="$event.preventDefault()">
+      <i class="ph ph-question"></i> Online Hilfe
+    </a>
+  </div>
+
+  <inm-pattern-title-band
+    title="Elektronischer Medikationsplan - eMP"
+    searchPlaceholder="Wirkstoff, Handelsname"
+    searchHotkey="Alt+S"
+    [search]="planSearch()"
+    (searchChange)="planSearch.set($event)">
+    <span actions class="title-band-actions">
+      <inm-button variant="akzent" size="m" iconLeft="plus" hotkey="Alt+1"
+        (click)="openAbdata(true)">
+        Neuer Eintrag (mit Rezept)
+      </inm-button>
+      <inm-button variant="akzent" size="m" iconLeft="plus" hotkey="Alt+2"
+        (click)="openAbdata(false)">
+        Neuer Eintrag (ohne Rezept)
+      </inm-button>
+    </span>
+  </inm-pattern-title-band>
+
+  <as-split direction="vertical" gutterSize="6" unit="percent" class="content-area">
+    <as-split-area [size]="60" [minSize]="20">
+      <emp-plan-table
+        [aktive]="aktive"
+        [pausiert]="pausiert"
+        [geplant]="geplant"
+        [search]="planSearch()"
+        [expanded]="expandedRows()"
+        [collapsed]="collapsedGroups()"
+        (rowClick)="openMedDetail($event.med, $event.event)"
+        (rowExpand)="toggleRow($event)"
+        (rowMenu)="openRowMenu($event.med, $event.event)"
+        (groupToggle)="toggleGroup($event)"
+        (dosageEdit)="openBearbeitenForDosage($event)" />
+    </as-split-area>
+
+    <as-split-area [size]="40" [minSize]="15">
+      <emp-sources-panel
+        [emlRows]="emlRows"
+        [kkRows]="kkRows"
+        [plans]="plans"
+        [search]="planSearch()"
+        [hideUsed]="hideUsedSrc()"
+        (hideUsedChange)="hideUsedSrc.set($event)"
+        (emlRowClick)="openEmlDetail($event)"
+        (emlImport)="openBearbeitenFromEml($event.row)"
+        (emlMenu)="openSrcRowMenu('eml', $event)"
+        (kkRowClick)="openKkDetail($event)"
+        (kkImport)="openBearbeitenFromKk($event)"
+        (kkMenu)="openSrcRowMenu('kk', $event)"
+        (planClick)="openPastPlan($event)" />
+    </as-split-area>
+  </as-split>
+
+</inm-pattern-dialog-shell>
+
+<!-- ══════════════════════════════════════════════════════
+     CONTEXT MENU OVERLAY
+     ══════════════════════════════════════════════════════ -->
+@if (ctxMenu()) {
+  <div class="ctx-backdrop" (click)="ctxMenu.set(null)"></div>
+  <div class="ctx-positioned"
+    [style.left.px]="ctxMenu()!.x"
+    [style.top.px]="ctxMenu()!.y">
+    <inm-context-menu
+      [items]="rowMenuItems"
+      (itemClick)="onRowMenuAction($event.label)" />
+  </div>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     MED DETAIL MODAL
+     ══════════════════════════════════════════════════════ -->
+@if (medDetailMed()) {
+  <inm-modal
+    [open]="medDetailOpen()"
+    [title]="medDetailMed()!.wirkstoff + ' — ' + medDetailMed()!.handelsname"
+    width="640px"
+    [dismissable]="false"
+    (closed)="medDetailOpen.set(false)">
+
+    <inm-button modal-actions variant="akzent" size="m" iconLeft="pencil-simple"
+      (click)="medDetailOpen.set(false); openBearbeiten(medDetailMed()!)">Bearbeiten</inm-button>
+    <span modal-actions class="action-separator" aria-hidden="true"></span>
+    <inm-button modal-actions variant="akzent" size="m" iconLeft="repeat">Wiederholen</inm-button>
+    <inm-button modal-actions variant="akzent" size="m" iconLeft="swap"
+      (click)="medDetailOpen.set(false); onBearbeitenAustausch(medDetailMed()!)">m. Austausch</inm-button>
+    <inm-button modal-actions variant="akzent" size="m" iconLeft="pause"
+      (click)="medDetailOpen.set(false); onBearbeitenPausieren(medDetailMed()!)">Pausieren</inm-button>
+    <inm-button modal-actions variant="destructive-akzent" size="m" iconLeft="stop-circle"
+      (click)="medDetailOpen.set(false); onBearbeitenBeenden(medDetailMed()!)">Beenden</inm-button>
+
+    <div class="modal-body-pad detail-stack">
+      <inm-pattern-key-value-list title="Medikament">
+        <inm-pattern-key-value-row label="Wirkstoff"   [value]="medDetailMed()!.wirkstoff" />
+        <inm-pattern-key-value-row label="Handelsname" [value]="medDetailMed()!.handelsname" />
+        <inm-pattern-key-value-row label="Stärke"      [value]="medDetailMed()!.staerke" />
+        <inm-pattern-key-value-row label="Form"        [value]="medDetailMed()!.form" />
+      </inm-pattern-key-value-list>
+
+      <inm-pattern-key-value-list title="Dosierung">
+        <inm-pattern-key-value-row label="Dosierangabe" [value]="medDetailMed()!.dosierung" />
+        <inm-pattern-key-value-row label="Art"          [value]="medDetailMed()!.art" />
+      </inm-pattern-key-value-list>
+
+      <inm-pattern-key-value-list title="Indikation">
+        <inm-pattern-key-value-row label="Grund"  [value]="medDetailMed()!.grund" />
+        <inm-pattern-key-value-row label="ICD-10">
+          <inm-badge variant="icd">{{ medDetailMed()!.details.icd }}</inm-badge>
+        </inm-pattern-key-value-row>
+        <inm-pattern-key-value-row label="Beginn" [value]="medDetailMed()!.details.beginn" />
+        <inm-pattern-key-value-row label="Restwiederholungen"
+          [value]="medDetailMed()!.rw > 0 ? medDetailMed()!.rw + '' : '–'" />
+      </inm-pattern-key-value-list>
+
+      @if (medDetailMed()!.details.versicherte || medDetailMed()!.details.mitbehandler) {
+        <inm-pattern-key-value-list title="Hinweise">
+          @if (medDetailMed()!.details.versicherte) {
+            <inm-pattern-key-value-row label="Für Versicherte"
+              [value]="medDetailMed()!.details.versicherte" />
+          }
+          @if (medDetailMed()!.details.mitbehandler) {
+            <inm-pattern-key-value-row label="Für Mitbehandler"
+              [value]="medDetailMed()!.details.mitbehandler" />
+          }
+        </inm-pattern-key-value-list>
+      }
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button variant="normal" size="l" (click)="medDetailOpen.set(false)">Schließen</inm-button>
+    </ng-container>
+  </inm-modal>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     BEARBEITEN MODAL
+     ══════════════════════════════════════════════════════ -->
+<emp-bearbeiten-modal
+  [med]="bearbeitenMed()"
+  [open]="bearbeitenOpen()"
+  [patient]="patient"
+  (closed)="onBearbeitenClosed()"
+  (pausieren)="onBearbeitenPausieren($event)"
+  (beenden)="onBearbeitenBeenden($event)"
+  (austausch)="onBearbeitenAustausch($event)" />
+
+<!-- ══════════════════════════════════════════════════════
+     eML IMPORT MODAL
+     ══════════════════════════════════════════════════════ -->
+@if (emlRow()) {
+  <inm-modal
+    [open]="emlOpen()"
+    title="Eintrag in Medikationsplan übernehmen"
+    width="600px"
+    [dismissable]="false"
+    (closed)="emlOpen.set(false)">
+
+    <div class="modal-body-pad modal-form">
+
+      <!-- Source info (readonly) -->
+      <div class="eml-source-info">
+        <div class="eml-source-row">
+          <span class="eml-source-label">Quelle</span>
+          <inm-badge [variant]="emlRow()!.typ === 'V' ? 'hist-v' : 'hist-d'">
+            {{ emlRow()!.typ === 'V' ? 'Verordnung' : 'Dispensierung' }}
+          </inm-badge>
+          <span class="eml-source-date">{{ emlRow()!.datum }}</span>
+          <span class="eml-source-provider">{{ emlRow()!.arzt ?? emlRow()!.apotheke }}</span>
+        </div>
+        <div class="eml-med-summary">
+          <strong>{{ emlRow()!.wirkstoff }}</strong>
+          {{ emlRow()!.handelsname }} {{ emlRow()!.staerke }} · {{ emlRow()!.form }}
+        </div>
+      </div>
+
+      <!-- Dosierung -->
+      <div class="form-section">
+        <div class="detail-section-title">Dosierung</div>
+        <div class="dosage-fields">
+          <div class="dos-field">
+            <label class="dos-time-label">Morgens</label>
+            <input class="dos-input" type="text"
+              [value]="emlDosage().morgens"
+              (input)="emlDosage.set({...emlDosage(), morgens: $any($event.target).value})" />
+          </div>
+          <span class="dos-sep">—</span>
+          <div class="dos-field">
+            <label class="dos-time-label">Mittags</label>
+            <input class="dos-input" type="text"
+              [value]="emlDosage().mittags"
+              (input)="emlDosage.set({...emlDosage(), mittags: $any($event.target).value})" />
+          </div>
+          <span class="dos-sep">—</span>
+          <div class="dos-field">
+            <label class="dos-time-label">Abends</label>
+            <input class="dos-input" type="text"
+              [value]="emlDosage().abends"
+              (input)="emlDosage.set({...emlDosage(), abends: $any($event.target).value})" />
+          </div>
+          <span class="dos-sep">—</span>
+          <div class="dos-field">
+            <label class="dos-time-label">Nachts</label>
+            <input class="dos-input" type="text"
+              [value]="emlDosage().nachts"
+              (input)="emlDosage.set({...emlDosage(), nachts: $any($event.target).value})" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row form-row-2col">
+        <inm-input label="Grund / Indikation" list="grund-options-eml"
+          [ngModel]="emlGrund()"
+          (ngModelChange)="emlGrund.set($event)" />
+        <inm-input label="ICD-10" placeholder="z. B. E78.0" [ngModel]="emlIcd()"
+          (ngModelChange)="emlIcd.set($event)" />
+      </div>
+      <datalist id="grund-options-eml">
+        @for (g of grundSuggestions; track g) { <option [value]="g"></option> }
+      </datalist>
+
+      <div class="form-row">
+        <inm-input label="Beginn" type="date" [ngModel]="emlBeginn()"
+          (ngModelChange)="emlBeginn.set($event)" />
+      </div>
+
+      <!-- Hinweise — moved to the bottom; optional, low-priority field -->
+      <div class="form-row">
+        <inm-input label="Hinweise" placeholder="Hinweise für die Versicherte"
+          [ngModel]="emlHinweise()" (ngModelChange)="emlHinweise.set($event)" />
+      </div>
+
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button variant="primary" size="l" iconLeft="check" (click)="submitEmlImport()">
+        In Plan übernehmen
+      </inm-button>
+      <inm-button variant="normal" size="l" (click)="emlOpen.set(false)">Abbrechen</inm-button>
+    </ng-container>
+  </inm-modal>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     CONFIRM MODAL
+     ══════════════════════════════════════════════════════ -->
+@if (confirm()) {
+  <inm-modal
+    [open]="confirmOpen()"
+    [title]="confirm()!.title"
+    width="400px"
+    [dismissable]="false"
+    (closed)="confirmOpen.set(false)">
+
+    <div class="modal-body-pad">
+      <p class="confirm-message">{{ confirm()!.message }}</p>
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button [variant]="confirm()!.danger ? 'destructive' : 'primary'" size="l"
+        (click)="runConfirm()">
+        Bestätigen
+      </inm-button>
+      <inm-button variant="normal" size="l" (click)="confirmOpen.set(false)">Abbrechen</inm-button>
+    </ng-container>
+  </inm-modal>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     ABDATA — Medikamentensuche
+     ══════════════════════════════════════════════════════ -->
+@if (abdataOpen()) {
+  <inm-modal
+    [open]="abdataOpen()"
+    [title]="abdataWithRezept() ? 'Neuer Eintrag — mit Rezept' : 'Neuer Eintrag — ohne Rezept'"
+    width="640px"
+    [dismissable]="false"
+    (closed)="abdataOpen.set(false)">
+
+    <div class="modal-body-pad modal-form">
+      <div class="modal-section-label">ABDATA Medikamentensuche</div>
+      <inm-input label="Suche" placeholder="Wirkstoff, Handelsname, PZN"
+        [ngModel]="abdataSearch()"
+        (ngModelChange)="abdataSearch.set($event)" />
+      <inm-vorschau-box variant="info">
+        ABDATA-Suchergebnisse erscheinen hier. (Prototyp-Stub — ohne echte Datenbank.)
+      </inm-vorschau-box>
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button variant="primary" size="l" iconLeft="plus" (click)="abdataOpen.set(false)">
+        Auswählen
+      </inm-button>
+      <inm-button variant="normal" size="l" (click)="abdataOpen.set(false)">Abbrechen</inm-button>
+    </ng-container>
+  </inm-modal>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     eML — Detailansicht (Verordnung + Dispensierung)
+     ══════════════════════════════════════════════════════ -->
+@if (emlDetailRow()) {
+  <inm-modal
+    [open]="emlDetailOpen()"
+    title="eML"
+    width="900px"
+    [dismissable]="false"
+    (closed)="emlDetailOpen.set(false)">
+
+    <span modal-title-after class="modal-title-context">
+      <span class="value">{{ patient.name }}</span>
+      <span class="value">{{ patient.birthDate }}</span>
+      <span class="meta">(<span class="value">{{ patient.age }}</span> J)</span>
+      <span class="value">{{ patient.gender }}</span>
+      <span class="meta">ID: <span class="value">{{ patient.id }}</span></span>
+    </span>
+
+    <!-- Side-by-side V/D comparison; right-side cells highlight when they
+         deviate from the prescription on the left. The Verordnung column
+         is tinted edge-to-edge to visually anchor it as the existing record. -->
+    <div class="eml-compare">
+      <div class="eml-compare-grid">
+        <div class="eml-compare-col">
+          <h3 class="eml-compare-title eml-compare-title-muted">Verordnung</h3>
+          <div class="eml-compare-fields">
+            @for (f of emlDetailFields(); track f.label) {
+              <div class="eml-compare-field">
+                <div class="eml-compare-label">{{ f.label }}</div>
+                <div class="eml-compare-value">{{ f.v || '—' }}</div>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="eml-compare-col">
+          <h3 class="eml-compare-title">Dispensierung</h3>
+          <div class="eml-compare-fields">
+            @for (f of emlDetailFields(); track f.label) {
+              <div class="eml-compare-field" [class.diff]="f.differs">
+                <div class="eml-compare-label">{{ f.label }}</div>
+                <div class="eml-compare-value">{{ f.d || '—' }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button variant="primary" size="l" iconLeft="pencil-simple"
+        (click)="openBearbeitenFromEml(emlDetailRow()!)">
+        Editieren und übernehmen
+      </inm-button>
+      <inm-button variant="normal" size="l" (click)="emlDetailOpen.set(false)">Abbrechen</inm-button>
+    </ng-container>
+  </inm-modal>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     Karteikarte — Quelldaten-Detail
+     ══════════════════════════════════════════════════════ -->
+@if (srcDetailRow()) {
+  <inm-modal
+    [open]="srcDetailOpen()"
+    title="Karteikarten-Eintrag"
+    width="640px"
+    [dismissable]="false"
+    (closed)="srcDetailOpen.set(false)">
+
+    <div class="modal-body-pad detail-stack">
+      <inm-pattern-key-value-list title="Eintrag">
+        <inm-pattern-key-value-row label="Datum" [value]="srcDetailRow()!.datum" />
+        <inm-pattern-key-value-row label="Typ"   [value]="srcDetailRow()!.typ" />
+        <inm-pattern-key-value-row label="Arzt"  [value]="srcDetailRow()!.arzt" />
+      </inm-pattern-key-value-list>
+
+      <inm-pattern-key-value-list title="Medikament">
+        <inm-pattern-key-value-row label="Bezeichnung" [value]="srcDetailRow()!.text" />
+      </inm-pattern-key-value-list>
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button variant="primary" size="l" iconLeft="pencil-simple"
+        (click)="openBearbeitenFromKk(srcDetailRow()!)">
+        Editieren und übernehmen
+      </inm-button>
+      <inm-button variant="normal" size="l" (click)="srcDetailOpen.set(false)">Abbrechen</inm-button>
+    </ng-container>
+  </inm-modal>
+}
+
+<!-- ══════════════════════════════════════════════════════
+     Vergangener Plan — Übersicht (full data table modal)
+     ══════════════════════════════════════════════════════ -->
+<emp-past-plan-modal
+  [plan]="pastPlanRow()"
+  [open]="pastPlanOpen()"
+  [patient]="patient"
+  [activeWirkstoffe]="aktiveWirkstoffe()"
+  [search]="planSearch()"
+  (closed)="pastPlanOpen.set(false)"
+  (editAndAdopt)="onPastPlanAdopt($event)" />
+
+<!-- ══════════════════════════════════════════════════════
+     SOURCE-ROW CONTEXT MENU (eML / Karteikarte ⋮)
+     ══════════════════════════════════════════════════════ -->
+@if (srcCtxMenu()) {
+  <div class="ctx-backdrop" (click)="srcCtxMenu.set(null)"></div>
+  <div class="ctx-positioned"
+    [style.left.px]="srcCtxMenu()!.x"
+    [style.top.px]="srcCtxMenu()!.y">
+    <inm-context-menu
+      [items]="srcRowMenuItems"
+      (itemClick)="onSrcRowMenuAction($event.label)" />
+  </div>
+}
