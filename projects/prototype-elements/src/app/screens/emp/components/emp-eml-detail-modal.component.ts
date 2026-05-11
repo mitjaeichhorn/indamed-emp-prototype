@@ -31,7 +31,6 @@ import { compareEmlFields } from '../../../data/eml-comparison';
         [open]="open"
         title="eML"
         width="900px"
-        [dismissable]="false"
         (closed)="closed.emit()">
         <!-- All bindings below read the signal-input value via row(). -->
 

@@ -32,7 +32,6 @@ export interface ConfirmOptions {
         [open]="open"
         [title]="options.title"
         width="400px"
-        [dismissable]="false"
         (closed)="closed.emit()">
 
         <div class="modal-body-pad">

@@ -38,7 +38,6 @@ import { MedEntry } from '../../../data/emp-data';
         [open]="open"
         [title]="med.wirkstoff + ' — ' + med.handelsname"
         width="640px"
-        [dismissable]="false"
         (closed)="closed.emit()">
 
         <inm-button modal-actions variant="akzent" size="m" iconLeft="pencil-simple"

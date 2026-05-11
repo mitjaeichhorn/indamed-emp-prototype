@@ -30,7 +30,6 @@ import { KarteikarteRow } from '../../../data/emp-data';
         [open]="open"
         title="Karteikarten-Eintrag"
         width="640px"
-        [dismissable]="false"
         (closed)="closed.emit()">
 
         <div class="modal-body-pad detail-stack">

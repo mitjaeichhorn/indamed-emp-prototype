@@ -31,7 +31,6 @@ import {
         [open]="open"
         [title]="withRezept ? 'Neuer Eintrag — mit Rezept' : 'Neuer Eintrag — ohne Rezept'"
         width="640px"
-        [dismissable]="false"
         (closed)="closed.emit()">
 
         <div class="modal-body-pad modal-form">
