@@ -382,8 +382,9 @@
   justify-content: flex-end;
   padding:         0 var(--inm-space-3);
   height:          32px;
-  background:      var(--inm-color-surface-chrome);
-  border-bottom:   1px solid var(--inm-color-border-default);
+  /* No dedicated chrome — sit on the dialog surface so the heading reads
+     as part of the body, not as a separate chrome strip. */
+  background:      var(--inm-color-surface-dialog);
   flex-shrink:     0;
   gap:             var(--inm-space-3);
 }
