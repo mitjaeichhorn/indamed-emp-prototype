@@ -1,0 +1,113 @@
+/* ── Shared modal-body layout ───────────────────────────────────────
+   Duplicated from the screen-level shared styles so the modal renders
+   correctly under Angular view encapsulation (screen styles don't reach
+   child component DOM). A future inm-pattern-modal-form primitive could
+   retire these. */
+
+.modal-body-pad { padding: var(--inm-space-4); }
+
+.modal-form {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--inm-space-3);
+}
+
+.form-section { display: flex; flex-direction: column; gap: var(--inm-space-2); }
+.form-row     { display: flex; flex-direction: column; }
+
+.form-row-2col {
+  flex-direction: row;
+  gap:            var(--inm-space-3);
+
+  > * { flex: 1; }
+}
+
+.detail-section-title {
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-caption);
+  font-weight:    var(--inm-font-weight-semibold);
+  color:          var(--inm-color-foreground-subtle);
+  text-transform: uppercase;
+  letter-spacing: var(--inm-letter-spacing-label);
+  margin-bottom:  var(--inm-space-2);
+}
+
+/* ── eML source info — readonly block at the top of the form ────── */
+
+.eml-source-info {
+  background:     var(--inm-color-surface-accent);
+  border:         1px solid var(--inm-color-border-subtle);
+  border-radius:  var(--inm-radius-input);
+  padding:        var(--inm-space-2) var(--inm-space-3);
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--inm-space-1);
+}
+
+.eml-source-row {
+  display:     flex;
+  align-items: center;
+  gap:         var(--inm-space-2);
+  font-family: var(--inm-font-family-default);
+  font-size:   var(--inm-font-size-caption);
+}
+
+.eml-source-label    { color: var(--inm-color-foreground-subtle); }
+.eml-source-date     { color: var(--inm-color-foreground-subtle); }
+.eml-source-provider { color: var(--inm-color-foreground-moderate); }
+
+.eml-med-summary {
+  font-family: var(--inm-font-family-default);
+  font-size:   var(--inm-font-size-body);
+  color:       var(--inm-color-foreground-default);
+}
+
+/* ── Dosage row (TZ) — 4 slots separated by em-dashes ──────────── */
+
+.dosage-fields {
+  display:     flex;
+  align-items: end;
+  gap:         var(--inm-space-2);
+}
+
+.dos-field {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  flex:           1;
+}
+
+.dos-time-label {
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-label);
+  font-weight:    var(--inm-font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--inm-letter-spacing-label);
+  color:          var(--inm-color-foreground-subtle);
+}
+
+.dos-input {
+  width:          100%;
+  box-sizing:     border-box;
+  font-family:    var(--inm-font-family-default);
+  font-size:      var(--inm-font-size-body);
+  color:          var(--inm-color-foreground-default);
+  background:     var(--inm-color-surface-default);
+  border:         1px solid var(--inm-color-border-default);
+  border-radius:  var(--inm-radius-input);
+  padding:        var(--inm-input-padding-y) var(--inm-input-padding-x);
+  outline:        none;
+  text-align:     center;
+
+  &:focus {
+    border-color: var(--inm-color-border-brand);
+    box-shadow:   0 0 0 2px var(--inm-color-border-brand);
+  }
+}
+
+.dos-sep {
+  font-family: var(--inm-font-family-default);
+  color:       var(--inm-color-foreground-muted);
+  align-self:  center;
+  padding-bottom: 6px;
+}

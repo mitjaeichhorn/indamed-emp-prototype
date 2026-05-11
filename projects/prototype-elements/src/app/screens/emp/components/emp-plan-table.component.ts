@@ -7,22 +7,11 @@ import {
   computed,
   signal,
 } from '@angular/core';
-import { BadgeComponent, HighlightPipe } from '@indamed/ui';
+import { BadgeComponent, HighlightPipe, SwitchComponent } from '@indamed/ui';
 import { MedEntry } from '../../../data/emp-data';
+import { medMatches } from '../../../data/search';
 
 export type MedGroup = 'aktiv' | 'pausiert' | 'geplant' | 'beendet';
-
-/** Returns true if any of the med's searchable fields includes the query. */
-function medMatches(med: MedEntry, query: string): boolean {
-  if (!query) return true;
-  const q = query.toLowerCase();
-  const fields: (string | undefined)[] = [
-    med.wirkstoff, med.handelsname, med.staerke, med.form,
-    med.dosierung, med.grund,
-    med.details?.mitbehandler, med.details?.versicherte,
-  ];
-  return fields.some(v => !!v && v.toLowerCase().includes(q));
-}
 
 /**
  * 10-column plan table — header, group dividers, data rows, and the
@@ -41,7 +30,7 @@ function medMatches(med: MedEntry, query: string): boolean {
   selector: 'emp-plan-table',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [BadgeComponent, HighlightPipe],
+  imports: [BadgeComponent, HighlightPipe, SwitchComponent],
   templateUrl: './emp-plan-table.component.html',
   styleUrl:    './emp-plan-table.component.scss',
 })

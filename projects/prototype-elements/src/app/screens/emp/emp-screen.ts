@@ -1,26 +1,28 @@
-import { Component, signal, computed, inject, ChangeDetectionStrategy, HostListener } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, signal, computed, inject, viewChild, ChangeDetectionStrategy, HostListener } from '@angular/core';
 import { SplitComponent, SplitAreaComponent } from 'angular-split';
 import {
   DialogShellComponent,
   TitleBandComponent,
   ButtonComponent,
-  BadgeComponent,
   HotkeyComponent,
-  ModalComponent,
   ContextMenuComponent,
   ContextMenuItem,
-  InputComponent,
-  VorschauBoxComponent,
   AltHintService,
-  KeyValueListComponent,
-  KeyValueRowComponent,
 } from '@indamed/ui';
 
 import { EmpPlanTableComponent, MedGroup } from './components/emp-plan-table.component';
 import { EmpSourcesPanelComponent } from './components/emp-sources-panel.component';
 import { EmpBearbeitenModalComponent } from './components/emp-bearbeiten-modal.component';
 import { EmpPastPlanModalComponent } from './components/emp-past-plan-modal.component';
+import { EmpConfirmModalComponent, ConfirmOptions } from './components/emp-confirm-modal.component';
+import { EmpAbdataModalComponent } from './components/emp-abdata-modal.component';
+import { EmpKarteikarteDetailModalComponent } from './components/emp-karteikarte-detail-modal.component';
+import { EmpMedDetailModalComponent } from './components/emp-med-detail-modal.component';
+import { EmpEmlDetailModalComponent } from './components/emp-eml-detail-modal.component';
+import {
+  EmpEmlImportModalComponent,
+  EmlImportSubmitPayload,
+} from './components/emp-eml-import-modal.component';
 
 import {
   PATIENT,
@@ -32,17 +34,11 @@ import {
   PAST_PLANS,
   MedEntry,
   EmlRow,
-  KarteikartzeRow,
+  KarteikarteRow,
   PastPlanEntry,
   PastPlanMed,
 } from '../../data/emp-data';
-
-export interface ConfirmOptions {
-  title:   string;
-  message: string;
-  danger:  boolean;
-  action:  () => void;
-}
+import { medFromEmlRow, medFromKkRow, medFromPastPlanMed } from '../../data/med-adapter';
 
 export interface ContextMenuState {
   med: MedEntry;
@@ -50,53 +46,26 @@ export interface ContextMenuState {
   y:   number;
 }
 
-export interface DosageFields {
-  morgens: string;
-  mittags: string;
-  abends:  string;
-  nachts:  string;
-}
-
-function parseDosage(dos: string): DosageFields {
-  const parts = dos.split('-');
-  if (parts.length === 4) {
-    return { morgens: parts[0], mittags: parts[1], abends: parts[2], nachts: parts[3] };
-  }
-  return { morgens: dos, mittags: '', abends: '', nachts: '' };
-}
-
-function formatDosage(f: DosageFields): string {
-  if (f.mittags !== '' || f.abends !== '' || f.nachts !== '') {
-    return `${f.morgens}-${f.mittags}-${f.abends}-${f.nachts}`;
-  }
-  return f.morgens;
-}
-
-// Note: DosageFields/parseDosage/formatDosage are still used by the eML import
-// modal which is inline in this screen. The bearbeiten modal has its own copy
-// inside the extracted component.
-
 @Component({
   selector: 'app-emp-screen',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
     DialogShellComponent,
     TitleBandComponent,
     ButtonComponent,
-    BadgeComponent,
     HotkeyComponent,
-    ModalComponent,
     ContextMenuComponent,
-    InputComponent,
-    VorschauBoxComponent,
     EmpPlanTableComponent,
     EmpSourcesPanelComponent,
     EmpBearbeitenModalComponent,
     EmpPastPlanModalComponent,
-    KeyValueListComponent,
-    KeyValueRowComponent,
+    EmpConfirmModalComponent,
+    EmpAbdataModalComponent,
+    EmpKarteikarteDetailModalComponent,
+    EmpMedDetailModalComponent,
+    EmpEmlDetailModalComponent,
+    EmpEmlImportModalComponent,
     SplitComponent,
     SplitAreaComponent,
   ],
@@ -107,6 +76,10 @@ export class EmpScreenComponent {
 
   /** Toggles the body.inm-alt-sticky class to pin/un-pin all hotkey hints. */
   readonly altHints = inject(AltHintService);
+
+  /** Reference to the Bearbeiten modal for deterministic dosage-input focus
+   *  when the dialog is opened from the Dosierangabe table cell. */
+  private readonly bearbeitenModal = viewChild(EmpBearbeitenModalComponent);
 
   // ── BACKEND-INTEGRATION (Read-Side) ─────────────────────────────────────
   // Im Prototyp werden statische Konstanten aus `emp-data.ts` zugewiesen.
@@ -193,14 +166,9 @@ export class EmpScreenComponent {
   bearbeitenMed  = signal<MedEntry | null>(null);
   bearbeitenOpen = signal(false);
 
-  // ── eML import modal ─────────────────────────────────────────
-  emlRow       = signal<EmlRow | null>(null);
-  emlOpen      = signal(false);
-  emlDosage    = signal<DosageFields>({ morgens: '', mittags: '', abends: '', nachts: '' });
-  emlHinweise  = signal('');
-  emlGrund     = signal('');
-  emlIcd       = signal('');
-  emlBeginn    = signal('');
+  // ── eML import modal — form state lives inside the extracted child;
+  //    presence of `emlRow` is the open flag.
+  emlRow  = signal<EmlRow | null>(null);
 
   // ── ABDATA medication search modal ───────────────────────────
   abdataOpen      = signal(false);
@@ -211,71 +179,7 @@ export class EmpScreenComponent {
   emlDetailRow   = signal<EmlRow | null>(null);
   emlDetailOpen  = signal(false);
 
-  /** V/D field pair for the eML detail comparison view. The clicked row supplies
-   *  one side (V or D); the counterpart is synthesised so the prototype can
-   *  demonstrate the diff highlights without a real link between V and D records. */
-  emlDetailFields = computed<{ label: string; v: string; d: string; differs: boolean }[]>(() => {
-    const row = this.emlDetailRow();
-    if (!row) return [];
-    const isV = row.typ === 'V';
-
-    const own = {
-      datum:         row.datum,
-      wirkstoff:     row.wirkstoff,
-      handelsname:   row.handelsname,
-      wirkstaerke:   row.staerke,
-      form:          row.form,
-      dosierangabe:  row.dosierung,
-      grund:         'Bluthochdruck',
-      abgabehinweis: '—',
-      autIdem:       'Nein',
-      privatrezept:  'Nein',
-    };
-
-    const counterpart = {
-      ...own,
-      datum:        this.shiftDate(row.datum, isV ? 8 : -8),
-      handelsname:  this.alternativeBrand(row.handelsname),
-      privatrezept: '—',
-    };
-
-    const v = isV ? own : counterpart;
-    const d = isV ? counterpart : own;
-
-    const FIELDS: { key: keyof typeof own; label: string }[] = [
-      { key: 'datum',         label: 'Datum' },
-      { key: 'wirkstoff',     label: 'Wirkstoff' },
-      { key: 'handelsname',   label: 'Handelsname' },
-      { key: 'wirkstaerke',   label: 'Wirkstärke' },
-      { key: 'form',          label: 'Form' },
-      { key: 'dosierangabe',  label: 'Dosierangabe' },
-      { key: 'grund',         label: 'Grund' },
-      { key: 'abgabehinweis', label: 'Abgabehinweis' },
-      { key: 'autIdem',       label: 'Aut idem (Ja/Nein)' },
-      { key: 'privatrezept',  label: 'Privatrezept (Ja/Nein)' },
-    ];
-
-    return FIELDS.map(f => ({
-      label:   f.label,
-      v:       v[f.key],
-      d:       d[f.key],
-      differs: v[f.key] !== d[f.key],
-    }));
-  });
-
-  private shiftDate(date: string, days: number): string {
-    const [d, m, y] = date.split('.').map(Number);
-    const dt = new Date(y, m - 1, d);
-    dt.setDate(dt.getDate() + days);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${pad(dt.getDate())}.${pad(dt.getMonth() + 1)}.${dt.getFullYear()}`;
-  }
-
-  private alternativeBrand(brand: string): string {
-    return brand.replace(/[ -](TAD|Heumann|AL|1A|Basics|Pharma|Generika)$/i, '').trim() + ' Generika';
-  }
-
-  srcDetailRow   = signal<KarteikartzeRow | null>(null);
+  srcDetailRow   = signal<KarteikarteRow | null>(null);
   srcDetailOpen  = signal(false);
 
   pastPlanRow    = signal<PastPlanEntry | null>(null);
@@ -292,9 +196,8 @@ export class EmpScreenComponent {
     { icon: 'check',          label: 'Als verwendet markieren' },
   ];
 
-  // ── Confirm modal ─────────────────────────────────────────────
-  confirm     = signal<ConfirmOptions | null>(null);
-  confirmOpen = signal(false);
+  // ── Confirm modal — presence == open, no separate flag ─────────
+  confirm = signal<ConfirmOptions | null>(null);
 
   // ── Derived ──────────────────────────────────────────────────
   /** Wirkstoffe currently in the active plan — used by the past-plan modal
@@ -307,9 +210,6 @@ export class EmpScreenComponent {
     [...this.aktive, ...this.pausiert, ...this.geplant]
       .filter(m => m.geaendert).length,
   );
-
-  // (filteredAktive moved into emp-plan-table — search filtering now lives
-  //  in each sub-component along with highlighting.)
 
   // ── Row expand ───────────────────────────────────────────────
   toggleRow(id: string): void {
@@ -383,17 +283,12 @@ export class EmpScreenComponent {
   }
 
   /** Opens the Bearbeiten modal and focuses the first dosage input.
-   *  Triggered by clicking the Dosierangabe cell in the plan table. */
+   *  Triggered by clicking the Dosierangabe cell in the plan table.
+   *  Focus is queued via `afterNextRender` inside the modal so the input
+   *  exists in the DOM before we call `.focus()` — no setTimeout race. */
   openBearbeitenForDosage(med: MedEntry): void {
     this.openBearbeiten(med);
-    // Defer until the modal's dosage section has rendered.
-    setTimeout(() => {
-      const input = document.querySelector<HTMLInputElement>(
-        '.dosage-grid .dos-input-num',
-      );
-      input?.focus();
-      input?.select();
-    }, 50);
+    this.bearbeitenModal()?.focusDosage();
   }
 
   /** "Editieren und übernehmen" from the eML V/D modal — open the same
@@ -405,75 +300,19 @@ export class EmpScreenComponent {
     const existing = this.aktive.find(
       m => m.wirkstoff.toLowerCase() === row.wirkstoff.toLowerCase(),
     );
-    const med: MedEntry = existing ?? {
-      id:          'eml-' + row.id,
-      wirkstoff:   row.wirkstoff,
-      handelsname: row.handelsname,
-      staerke:     row.staerke,
-      form:        row.form,
-      dosierung:   row.dosierung,
-      hinweise:    '',
-      grund:       '',
-      rw:          0,
-      art:         '',
-      details: {
-        versicherte:  '',
-        mitbehandler: '',
-        beginn:       row.datum,
-        icd:          '',
-        historie:     [],
-      },
-    };
-    this.openBearbeiten(med);
+    this.openBearbeiten(existing ?? medFromEmlRow(row));
   }
 
   /** "Editieren und übernehmen" from the Karteikarte detail modal — same
    *  Bearbeiten dialog. Karteikarte rows only carry a free-text description
-   *  (e.g. "IBUPROFEN AL 2% SAFT"), so we parse it into wirkstoff / staerke /
-   *  form when no matching active med is found. */
-  openBearbeitenFromKk(row: KarteikartzeRow): void {
+   *  (e.g. "IBUPROFEN AL 2% SAFT"); `medFromKkRow` parses it into a partial
+   *  MedEntry when no matching active med is found. */
+  openBearbeitenFromKk(row: KarteikarteRow): void {
     this.srcDetailOpen.set(false);
     const existing = this.aktive.find(
       m => row.text.toLowerCase().includes(m.wirkstoff.toLowerCase()),
     );
-    const med: MedEntry = existing ?? this.medFromKkText(row);
-    this.openBearbeiten(med);
-  }
-
-  /** Best-effort parse of "WIRKSTOFF [BRAND] STÄRKE FORM" → MedEntry fields. */
-  private medFromKkText(row: KarteikartzeRow): MedEntry {
-    const text = row.text.trim();
-    // Stärke: first number + optional decimal + unit (mg, µg, g, ml, %, IE, …).
-    const staerkeMatch = text.match(/\d+(?:[.,]\d+)?\s*(?:mg|µg|mcg|g|ml|%|i\.?e\.?|hub|stk)\b/i);
-    const staerke = staerkeMatch?.[0] ?? '';
-    // Form: last token if it looks like a galenic form abbreviation.
-    const tokens   = text.replace(staerke, '').trim().split(/\s+/);
-    const formSet  = new Set(['TAB','TABL','TABLS','TBL','KAPS','KAP','HKP','SAFT','TR','TRP','AMP','SUPP','SAL','PUL','SPR','CR']);
-    const last     = tokens[tokens.length - 1] ?? '';
-    const form     = formSet.has(last.toUpperCase()) ? last : '';
-    // Wirkstoff: first word, title-cased so it matches the Bearbeiten layout.
-    const first    = tokens[0] ?? text;
-    const wirkstoff = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
-
-    return {
-      id:          'kk-' + row.id,
-      wirkstoff,
-      handelsname: text,
-      staerke,
-      form,
-      dosierung:   '',
-      hinweise:    '',
-      grund:       '',
-      rw:          0,
-      art:         '',
-      details: {
-        versicherte:  '',
-        mitbehandler: '',
-        beginn:       row.datum,
-        icd:          '',
-        historie:     [],
-      },
-    };
+    this.openBearbeiten(existing ?? medFromKkRow(row));
   }
 
   /** Called by emp-bearbeiten-modal when its inner Pausieren button is hit. */
@@ -514,47 +353,23 @@ export class EmpScreenComponent {
   // ── eML import ────────────────────────────────────────────────
   openEmlImport(row: EmlRow, event: Event): void {
     event.stopPropagation();
-    this.emlRow.set(row);
-    this.emlDosage.set(parseDosage(row.dosierung));
-    this.emlHinweise.set('');
-    this.emlGrund.set('');
-    this.emlIcd.set('');
-    this.emlBeginn.set('');
-    this.emlOpen.set(true);
+    this.emlRow.set(row);     // presence == open; form state lives in the modal
   }
 
-  submitEmlImport(): void {
-    // BACKEND-INTEGRATION — eML-Eintrag in den aktiven Plan übernehmen
-    //
-    //   POST /api/patients/{patientId}/medications
-    //   Body:
-    //     {
-    //       "sourceType":  "eml",                       // "eml" | "karteikarte" | "pastPlan" | "manual"
-    //       "sourceRef":   "<emlRow.id>",               // Rückverweis auf Quelle (für Audit)
-    //       "wirkstoff":   "Bisoprolol",
-    //       "handelsname": "Bisoprolol-TAD",
-    //       "staerke":     "2,5 mg",
-    //       "form":        "Tabls",
-    //       "dosierung":   "1-0-0-0",                   // 'M-M-A-N' oder Freitext
-    //       "hinweise":    "Nüchtern einnehmen",        // optional
-    //       "grund":       "Bluthochdruck",             // Indikation als Klartext
-    //       "icd":         "I10",                       // ICD-10
-    //       "beginn":      "10.05.2026"                 // 'TT.MM.JJJJ'
-    //     }
-    //   Response 201: vollständiger MedEntry (siehe emp-data.ts) inkl. Backend-`id`.
-    //   Errors:       400 (Validation), 409 (Wirkstoff bereits aktiv).
-    //   On success:   `aktive` neu laden + `emlRows` refetchen (uebernommen=true).
-    console.log('eML übernehmen:', {
-      sourceType: 'eml',
-      sourceRef:  this.emlRow()?.id,
-      wirkstoff:  this.emlRow()?.wirkstoff,
-      dosierung:  formatDosage(this.emlDosage()),
-      hinweise:   this.emlHinweise(),
-      grund:      this.emlGrund(),
-      icd:        this.emlIcd(),
-      beginn:     this.emlBeginn(),
-    });
-    this.emlOpen.set(false);
+  /**
+   * Emitted by `<emp-eml-import-modal>` on "In Plan übernehmen".
+   *
+   * BACKEND-INTEGRATION — eML-Eintrag in den aktiven Plan übernehmen
+   *
+   *   POST /api/patients/{patientId}/medications
+   *   Body: `EmlImportSubmitPayload` (shape defined alongside the modal).
+   *   Response 201: vollständiger MedEntry. On success: refetch `aktive`
+   *   and `emlRows` (the latter to flip uebernommen=true on the source).
+   *   Errors: 400 (Validation), 409 (Wirkstoff bereits aktiv).
+   */
+  submitEmlImport(payload: EmlImportSubmitPayload): void {
+    console.log('eML übernehmen:', payload);
+    this.emlRow.set(null);
   }
 
   // ── Source row clicks (open detail views) ────────────────────
@@ -563,7 +378,7 @@ export class EmpScreenComponent {
     this.emlDetailOpen.set(true);
   }
 
-  openKkDetail(row: KarteikartzeRow): void {
+  openKkDetail(row: KarteikarteRow): void {
     this.srcDetailRow.set(row);
     this.srcDetailOpen.set(true);
   }
@@ -585,26 +400,7 @@ export class EmpScreenComponent {
     const existing = this.aktive.find(
       m => m.wirkstoff.toLowerCase() === med.wirkstoff.toLowerCase(),
     );
-    const entry: MedEntry = existing ?? {
-      id:          'pp-' + med.wirkstoff,
-      wirkstoff:   med.wirkstoff,
-      handelsname: med.handelsname,
-      staerke:     med.staerke,
-      form:        med.form,
-      dosierung:   med.dosierung,
-      hinweise:    '',
-      grund:       med.grund,
-      rw:          0,
-      art:         '',
-      details: {
-        versicherte:  '',
-        mitbehandler: '',
-        beginn:       '',
-        icd:          '',
-        historie:     [],
-      },
-    };
-    this.openBearbeiten(entry);
+    this.openBearbeiten(existing ?? medFromPastPlanMed(med));
   }
 
   // ── ABDATA modal ─────────────────────────────────────────────
@@ -662,11 +458,9 @@ export class EmpScreenComponent {
   // ── Confirm ───────────────────────────────────────────────────
   openConfirm(opts: ConfirmOptions): void {
     this.confirm.set(opts);
-    this.confirmOpen.set(true);
   }
 
-  runConfirm(): void {
-    this.confirm()?.action();
-    this.confirmOpen.set(false);
+  closeConfirm(): void {
+    this.confirm.set(null);
   }
 }

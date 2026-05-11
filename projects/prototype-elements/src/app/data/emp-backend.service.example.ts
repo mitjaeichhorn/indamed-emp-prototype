@@ -24,7 +24,7 @@ import { PatientData } from '@indamed/ui';
 import {
   MedEntry,
   EmlRow,
-  KarteikartzeRow,
+  KarteikarteRow,
   PastPlanEntry,
 } from './emp-data';
 
@@ -159,8 +159,8 @@ export class EmpBackendService {
   }
 
   /** GET /api/patients/{patientId}/sources/karteikarte */
-  getKarteikarte(patientId: string): Observable<KarteikartzeRow[]> {
-    return this.http.get<KarteikartzeRow[]>(
+  getKarteikarte(patientId: string): Observable<KarteikarteRow[]> {
+    return this.http.get<KarteikarteRow[]>(
       `${this.baseUrl}/patients/${patientId}/sources/karteikarte`,
       { headers: this.headers() },
     );

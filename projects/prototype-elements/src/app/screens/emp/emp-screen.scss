@@ -76,6 +76,14 @@ as-split.content-area {
 /* Clickable wrapper around the "halten für Tastenkürzel" legend.
    Toggles AltHintService.sticky on click. */
 .alt-legend {
+  /* Resets the default <button> chrome so this reads as a text-like
+     affordance, not a chip. Native <button> still earns us focus, keyboard
+     activation, and the implicit role — no role="button" / tabindex needed. */
+  appearance:     none;
+  background:     none;
+  border:         none;
+  font:           inherit;
+  color:          inherit;
   display:        inline-flex;
   align-items:    center;
   cursor:         pointer;
@@ -128,26 +136,8 @@ as-split.content-area {
   gap: var(--inm-space-3);
 }
 
-.detail-section-title {
-  font-family:  var(--inm-font-family-default);
-  font-size:    var(--inm-font-size-caption);
-  font-weight:  var(--inm-font-weight-semibold);
-  color:        var(--inm-color-foreground-subtle);
-  text-transform: uppercase;
-  letter-spacing: var(--inm-letter-spacing-label);
-  margin-bottom: var(--inm-space-1);
-}
-
-.detail-grid {
-  display:               grid;
-  grid-template-columns: max-content 1fr;
-  gap:                   var(--inm-space-1) var(--inm-space-4);
-  font-family:           var(--inm-font-family-default);
-  font-size:             var(--inm-font-size-caption);
-}
-
-.detail-label { color: var(--inm-color-foreground-subtle); white-space: nowrap; }
-.detail-value { color: var(--inm-color-foreground-default); font-weight: var(--inm-font-weight-medium); }
+/* `.detail-section-title`, `.detail-grid`, `.detail-label`, `.detail-value`
+   live under "SHARED MODAL STYLES" below — keep them in one place. */
 
 /* ══════════════════════════════════════════════════════════════════
    CONTEXT MENU
@@ -201,12 +191,7 @@ as-split.content-area {
 .detail-label { color: var(--inm-color-foreground-subtle); white-space: nowrap; }
 .detail-value { color: var(--inm-color-foreground-default); font-weight: var(--inm-font-weight-medium); }
 
-.confirm-message {
-  font-family: var(--inm-font-family-default);
-  font-size:   var(--inm-font-size-body);
-  color:       var(--inm-color-foreground-default);
-  line-height: var(--inm-line-height-body);
-}
+/* `.confirm-message` moved into <emp-confirm-modal>'s component styles. */
 
 /* ══════════════════════════════════════════════════════════════════
    FORM MODAL LAYOUT
@@ -270,60 +255,8 @@ as-split.content-area {
 .ro-label { color: var(--inm-color-foreground-subtle); }
 .ro-value { color: var(--inm-color-foreground-default); }
 
-/* ── eML Verordnung/Dispensierung side-by-side comparison ─────── */
-
-.eml-compare-grid {
-  display:               grid;
-  grid-template-columns: 1fr 1fr;
-  gap:                   0;
-}
-
-/* Left = standard dialog grey (existing record); right = white (the new entry).
-   Diffs on the right are tinted blue (see .diff below). */
-.eml-compare-col {
-  padding: var(--inm-space-4);
-}
-.eml-compare-col:first-child  { background: var(--inm-color-surface-dialog); }
-.eml-compare-col:last-child   { background: var(--inm-color-surface-default); }
-
-.eml-compare-title {
-  margin:      0 0 var(--inm-space-3);
-  font-family: var(--inm-font-family-default);
-  font-size:   22px;
-  font-weight: var(--inm-font-weight-light);
-  color:       var(--inm-color-foreground-default);
-}
-.eml-compare-title-muted { color: var(--inm-color-foreground-muted); }
-
-.eml-compare-fields {
-  display:        flex;
-  flex-direction: column;
-}
-
-.eml-compare-field {
-  padding:       var(--inm-space-2) var(--inm-space-2);
-  border-bottom: 1px solid var(--inm-color-border-subtle);
-
-  /* Diff highlight on Dispensierung column when value deviates from V —
-     same Abweichung-yellow token as the eML source-table diff rows. */
-  &.diff { background: var(--inm-color-status-warning-tint); }
-}
-
-.eml-compare-label {
-  margin-bottom:  2px;
-  font-family:    var(--inm-font-family-default);
-  font-size:      var(--inm-font-size-label);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color:          var(--inm-color-foreground-subtle);
-}
-
-.eml-compare-value {
-  font-family: var(--inm-font-family-default);
-  font-size:   var(--inm-font-size-body);
-  font-weight: var(--inm-font-weight-semibold);
-  color:       var(--inm-color-foreground-default);
-}
+/* `.eml-compare-*` styles moved into <emp-eml-detail-modal>'s component
+   styles when the modal was extracted from this screen. */
 
 /* ── eML source info block ──────────────────────────────────────── */
 

@@ -4,8 +4,13 @@ import {
   Output,
   EventEmitter,
   ChangeDetectionStrategy,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  inject,
   signal,
   computed,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -70,6 +75,38 @@ function formatDosage(f: DosageFields): string {
  *
  * Owns its own form state. When `med` changes, the form is reset from
  * the new med's values. Emits `closed`, `pausieren`, `beenden`, `austausch`.
+ *
+ * Planned refactor — `DosisTyp`-axis split (deferred)
+ * ────────────────────────────────────────────────────
+ * This component grew along the four scheduling modes (Täglich-TZ,
+ * Täglich-UZ, Wöchentlich, Intervall). Each mode owns its own state shape,
+ * its own vorschau computed, and its own keyboard / suggestion logic — they
+ * are effectively a discriminated-union UI living inside one class.
+ *
+ * The clean target structure is:
+ *
+ *   emp-bearbeiten-modal             ← stays as the shell:
+ *     - Medikament readonly block
+ *     - DosisTyp / Einheit selects
+ *     - Vorschau strip (delegates text to the active mode)
+ *     - Grund / ICD / Beginn / Hinweise (shared across modes)
+ *     - Top action row + save / cancel footer
+ *
+ *   components/dosage/
+ *     dosage-tz.component            ← Täglich · Tageszeiten (4 inputs + suggestions)
+ *     dosage-uz.component            ← Täglich · Uhrzeiten (list of {time, amount})
+ *     dosage-woechentlich.component  ← per-day editor
+ *     dosage-intervall.component     ← alle N Tage/Wochen/Monate + TZ or UZ
+ *
+ *   data/dosage-schedule.ts          ← shared types: DosisTyp, DosageSchedule,
+ *                                       WkDayData, etc., plus DOSAGE_PATTERNS
+ *
+ * Why this is deferred from the post-audit refactor batch: it changes zero
+ * user-visible behaviour but reshuffles ~400 LOC of form logic. Without
+ * test coverage on the dosage modes, an unobserved regression in
+ * mode-switching, keyboard nav, or vorschau formatting would be easy to
+ * miss. The split deserves its own focused branch with at least snapshot
+ * tests per mode before landing.
  */
 @Component({
   selector: 'emp-bearbeiten-modal',
@@ -103,6 +140,30 @@ export class EmpBearbeitenModalComponent {
   @Output() pausieren = new EventEmitter<MedEntry>();
   @Output() beenden   = new EventEmitter<MedEntry>();
   @Output() austausch = new EventEmitter<MedEntry>();
+
+  /** Reference to the first dosage input (morgens) — used by `focusDosage()`
+   *  to focus + select after the parent has opened the modal. The template
+   *  binds it on the TZ-mode input. */
+  private readonly firstDosageInput = viewChild<ElementRef<HTMLInputElement>>('firstDosageInput');
+  private readonly injector = inject(Injector);
+
+  /**
+   * Public entry point for parents that want to open the modal directly on
+   * the dosage editor (e.g. clicking the Dosierangabe cell in the plan
+   * table). The parent flips `open` + `med` first; then calls this method.
+   * `afterNextRender` waits for Angular to render the modal contents before
+   * we touch the DOM — no `setTimeout` race.
+   */
+  focusDosage(): void {
+    afterNextRender(
+      () => {
+        const el = this.firstDosageInput()?.nativeElement;
+        el?.focus();
+        el?.select();
+      },
+      { injector: this.injector },
+    );
+  }
 
   editDosistyp     = signal<DosisTyp>('taeglich-tz');
   editEinheit      = signal('Stück');
@@ -296,26 +357,24 @@ export class EmpBearbeitenModalComponent {
     return matching.length > 0 ? matching : this.dosagePatterns;
   });
 
-  /** Pending blur-timer id; cancelled when focus jumps to a sibling field
-   *  so the suggestion list stays open while the user tabs across slots. */
-  private dosageBlurTimer: ReturnType<typeof setTimeout> | null = null;
-
   onDosageFocus(): void {
-    if (this.dosageBlurTimer !== null) {
-      clearTimeout(this.dosageBlurTimer);
-      this.dosageBlurTimer = null;
-    }
     this.dosageSuggestionsOpen.set(true);
     this.activeSuggestionIdx.set(-1);
   }
 
-  /** Delay close so a click on a suggestion (or focus on a sibling field)
-   *  has a chance to cancel before the list disappears. */
-  onDosageBlur(): void {
-    this.dosageBlurTimer = setTimeout(() => {
-      this.dosageSuggestionsOpen.set(false);
-      this.dosageBlurTimer = null;
-    }, 150);
+  /**
+   * Close the suggestions list — except when focus is moving to another
+   * slot in the same `.dosage-grid` (so Tab/Shift+Tab between morgens →
+   * mittags → abends → nachts keeps the list open). Clicks on a
+   * suggestion don't trigger blur at all: the suggestions <ul> binds
+   * `(mousedown)="$event.preventDefault()"`, which keeps focus on the
+   * active input, and the suggestion's own mousedown handler runs first
+   * to apply + close synchronously.
+   */
+  onDosageBlur(event: FocusEvent): void {
+    const next = event.relatedTarget as Element | null;
+    if (next?.closest('.dosage-grid')) return;
+    this.dosageSuggestionsOpen.set(false);
   }
 
   /** Keyboard navigation while suggestions are open: ↑/↓ moves the active

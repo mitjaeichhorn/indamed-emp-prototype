@@ -8,12 +8,10 @@
     <span class="sources-legend diff">Abweichung</span>
     <span class="sources-legend in-plan">im Plan</span>
     <span class="sources-legend used">nicht im aktuellen Plan</span>
-    <label class="sources-toggle">
-      <input type="checkbox" [checked]="hideUsed"
-        (change)="onToggleHideUsed($any($event.target).checked)" />
-      <span class="switch-slider"></span>
-      <span>Bereits übernommene ausblenden</span>
-    </label>
+    <inm-switch
+      [checked]="hideUsed"
+      (checkedChange)="onToggleHideUsed($event)"
+      label="Bereits übernommene ausblenden" />
   </span>
 </div>
 

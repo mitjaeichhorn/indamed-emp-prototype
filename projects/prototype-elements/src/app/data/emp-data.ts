@@ -294,7 +294,7 @@ export const EML_ROWS: EmlRow[] = [
   { id: 'eml-4', wirkstoff: 'Omeprazol',   handelsname: 'Omeprazol Heumann',  staerke: '20 mg',  form: 'Kapseln', dosierung: '1-0-0-0', datum: '05.12.2024', typ: 'V', arzt: 'Dr. Weber',  uebernommen: false, abweichung: true },
 ];
 
-export interface KarteikartzeRow {
+export interface KarteikarteRow {
   id:        string;
   datum:     string;
   typ:       string;
@@ -327,7 +327,7 @@ export interface KarteikartzeRow {
  * Wichtig: `text` ist NICHT strukturiert (bewusst, weil Altdaten). Das UI
  * parsiert ihn bei Bedarf via `medFromKkText` in `emp-screen.ts`.
  */
-export const KARTEIKARTE_ROWS: KarteikartzeRow[] = [
+export const KARTEIKARTE_ROWS: KarteikarteRow[] = [
   { id: 'kk-1', datum: '20.01.2025', typ: 'Med', text: 'BISOPROLOL RAT 2,5MG TAB',  arzt: 'Dr. Müller', used: true },
   { id: 'kk-2', datum: '20.01.2025', typ: 'Med', text: 'IBUPROFEN 200MG',            arzt: 'Dr. Müller', diff: true },
   { id: 'kk-3', datum: '15.01.2025', typ: 'Med', text: 'IBUPROFEN AL 2% SAFT',       arzt: 'Dr. Müller', diff: true },

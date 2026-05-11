@@ -1,0 +1,92 @@
+@if (row) {
+  <inm-modal
+    [open]="open"
+    title="Eintrag in Medikationsplan übernehmen"
+    width="600px"
+    [dismissable]="false"
+    (closed)="closed.emit()">
+
+    <div class="modal-body-pad modal-form">
+
+      <!-- Source info (readonly) -->
+      <div class="eml-source-info">
+        <div class="eml-source-row">
+          <span class="eml-source-label">Quelle</span>
+          <inm-badge [variant]="row.typ === 'V' ? 'hist-v' : 'hist-d'">
+            {{ row.typ === 'V' ? 'Verordnung' : 'Dispensierung' }}
+          </inm-badge>
+          <span class="eml-source-date">{{ row.datum }}</span>
+          <span class="eml-source-provider">{{ row.arzt ?? row.apotheke }}</span>
+        </div>
+        <div class="eml-med-summary">
+          <strong>{{ row.wirkstoff }}</strong>
+          {{ row.handelsname }} {{ row.staerke }} · {{ row.form }}
+        </div>
+      </div>
+
+      <!-- Dosierung -->
+      <div class="form-section">
+        <div class="detail-section-title">Dosierung</div>
+        <div class="dosage-fields">
+          <div class="dos-field">
+            <label class="dos-time-label">Morgens</label>
+            <input class="dos-input" type="text"
+              [value]="dosage().morgens"
+              (input)="dosage.set({...dosage(), morgens: $any($event.target).value})" />
+          </div>
+          <span class="dos-sep">—</span>
+          <div class="dos-field">
+            <label class="dos-time-label">Mittags</label>
+            <input class="dos-input" type="text"
+              [value]="dosage().mittags"
+              (input)="dosage.set({...dosage(), mittags: $any($event.target).value})" />
+          </div>
+          <span class="dos-sep">—</span>
+          <div class="dos-field">
+            <label class="dos-time-label">Abends</label>
+            <input class="dos-input" type="text"
+              [value]="dosage().abends"
+              (input)="dosage.set({...dosage(), abends: $any($event.target).value})" />
+          </div>
+          <span class="dos-sep">—</span>
+          <div class="dos-field">
+            <label class="dos-time-label">Nachts</label>
+            <input class="dos-input" type="text"
+              [value]="dosage().nachts"
+              (input)="dosage.set({...dosage(), nachts: $any($event.target).value})" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row form-row-2col">
+        <inm-input label="Grund / Indikation" list="grund-options-eml-import"
+          [ngModel]="grund()"
+          (ngModelChange)="grund.set($event)" />
+        <inm-input label="ICD-10" placeholder="z. B. E78.0" [ngModel]="icd()"
+          (ngModelChange)="icd.set($event)" />
+      </div>
+      <datalist id="grund-options-eml-import">
+        @for (g of grundSuggestions; track g) { <option [value]="g"></option> }
+      </datalist>
+
+      <div class="form-row">
+        <inm-input label="Beginn" type="date" [ngModel]="beginn()"
+          (ngModelChange)="beginn.set($event)" />
+      </div>
+
+      <!-- Hinweise — optional, low-priority field; kept at the bottom. -->
+      <div class="form-row">
+        <inm-input label="Hinweise" placeholder="Hinweise für die Versicherte"
+          [ngModel]="hinweise()" (ngModelChange)="hinweise.set($event)" />
+      </div>
+
+    </div>
+
+    <ng-container modal-footer>
+      <inm-button variant="primary" size="l" iconLeft="check" (click)="submit()">
+        In Plan übernehmen
+      </inm-button>
+      <inm-button variant="normal" size="l" (click)="closed.emit()">Abbrechen</inm-button>
+    </ng-container>
+  </inm-modal>
+}

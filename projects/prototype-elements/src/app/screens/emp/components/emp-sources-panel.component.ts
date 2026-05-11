@@ -7,28 +7,9 @@ import {
   computed,
   signal,
 } from '@angular/core';
-import { HotkeyComponent, ButtonComponent, HighlightPipe } from '@indamed/ui';
-import { EmlRow, KarteikartzeRow, PastPlanEntry, PastPlanMed } from '../../../data/emp-data';
-
-function emlMatches(row: EmlRow, q: string): boolean {
-  if (!q) return true;
-  const ql = q.toLowerCase();
-  return [row.wirkstoff, row.handelsname, row.staerke, row.form, row.dosierung]
-    .some(v => !!v && v.toLowerCase().includes(ql));
-}
-
-function kkMatches(row: KarteikartzeRow, q: string): boolean {
-  if (!q) return true;
-  const ql = q.toLowerCase();
-  return [row.text, row.arzt].some(v => !!v && v.toLowerCase().includes(ql));
-}
-
-function planMedMatches(m: PastPlanMed, q: string): boolean {
-  if (!q) return false;
-  const ql = q.toLowerCase();
-  return [m.wirkstoff, m.handelsname, m.staerke, m.form, m.dosierung, m.grund]
-    .some(v => !!v && v.toLowerCase().includes(ql));
-}
+import { HotkeyComponent, ButtonComponent, HighlightPipe, SwitchComponent } from '@indamed/ui';
+import { EmlRow, KarteikarteRow, PastPlanEntry } from '../../../data/emp-data';
+import { emlMatches, kkMatches, planMedMatches } from '../../../data/search';
 
 /**
  * Quellen panel — 4 columns (eML / Karteikarte / Vergangene Pläne / BMP)
@@ -46,19 +27,19 @@ function planMedMatches(m: PastPlanMed, q: string): boolean {
   selector: 'emp-sources-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [HotkeyComponent, ButtonComponent, HighlightPipe],
+  imports: [HotkeyComponent, ButtonComponent, HighlightPipe, SwitchComponent],
   templateUrl: './emp-sources-panel.component.html',
   styleUrl:    './emp-sources-panel.component.scss',
 })
 export class EmpSourcesPanelComponent {
   @Input({ required: true }) set emlRows(list: EmlRow[])           { this._eml.set(list); }
-  @Input({ required: true }) set kkRows(list: KarteikartzeRow[])   { this._kk.set(list); }
+  @Input({ required: true }) set kkRows(list: KarteikarteRow[])   { this._kk.set(list); }
   @Input({ required: true }) set plans(list: PastPlanEntry[])      { this._plans.set(list); }
   @Input() set search(value: string)                                { this._search.set(value); }
   @Input() hideUsed = false;
 
   private _eml    = signal<EmlRow[]>([]);
-  private _kk     = signal<KarteikartzeRow[]>([]);
+  private _kk     = signal<KarteikarteRow[]>([]);
   private _plans  = signal<PastPlanEntry[]>([]);
   private _search = signal<string>('');
 
@@ -82,8 +63,8 @@ export class EmpSourcesPanelComponent {
   @Output() emlImport   = new EventEmitter<{ row: EmlRow; event: Event }>();
   @Output() emlMenu     = new EventEmitter<MouseEvent>();
 
-  @Output() kkRowClick  = new EventEmitter<KarteikartzeRow>();
-  @Output() kkImport    = new EventEmitter<KarteikartzeRow>();
+  @Output() kkRowClick  = new EventEmitter<KarteikarteRow>();
+  @Output() kkImport    = new EventEmitter<KarteikarteRow>();
   @Output() kkMenu      = new EventEmitter<MouseEvent>();
 
   @Output() planClick   = new EventEmitter<PastPlanEntry>();
@@ -98,8 +79,8 @@ export class EmpSourcesPanelComponent {
     this.emlMenu.emit(event);
   }
 
-  onKkRow(row: KarteikartzeRow): void { this.kkRowClick.emit(row); }
-  onKkImport(row: KarteikartzeRow, event: Event): void {
+  onKkRow(row: KarteikarteRow): void { this.kkRowClick.emit(row); }
+  onKkImport(row: KarteikarteRow, event: Event): void {
     event.stopPropagation();
     this.kkImport.emit(row);
   }

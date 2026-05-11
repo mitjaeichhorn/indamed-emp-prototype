@@ -12,15 +12,10 @@ import {
   ButtonComponent,
   HighlightPipe,
   PatientData,
+  SwitchComponent,
 } from '@indamed/ui';
 import { PastPlanEntry, PastPlanMed } from '../../../data/emp-data';
-
-function planMedMatches(m: PastPlanMed, q: string): boolean {
-  if (!q) return false;
-  const ql = q.toLowerCase();
-  return [m.wirkstoff, m.handelsname, m.staerke, m.form, m.dosierung, m.grund]
-    .some(v => !!v && v.toLowerCase().includes(ql));
-}
+import { planMedMatches } from '../../../data/search';
 
 /**
  * Past-plan detail modal — shows every med from a previous plan in a wide
@@ -41,7 +36,7 @@ function planMedMatches(m: PastPlanMed, q: string): boolean {
   selector: 'emp-past-plan-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModalComponent, ButtonComponent, HighlightPipe],
+  imports: [ModalComponent, ButtonComponent, HighlightPipe, SwitchComponent],
   templateUrl: './emp-past-plan-modal.component.html',
   styleUrl:    './emp-past-plan-modal.component.scss',
 })
